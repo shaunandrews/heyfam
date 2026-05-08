@@ -4,6 +4,7 @@ namespace HeyFam\Core;
 final class Plugin {
     public function boot(): void {
         new \HeyFam\Core\Privacy\PIIShield();
+        new \HeyFam\Core\REST\Routes();
     }
 
     public static function activate(): void {
