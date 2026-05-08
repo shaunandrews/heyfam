@@ -3,7 +3,7 @@ namespace HeyFam\Core;
 
 final class Plugin {
     public function boot(): void {
-        // Modules wire themselves in via constructor side effects in subsequent tasks.
+        new \HeyFam\Core\Privacy\PIIShield();
     }
 
     public static function activate(): void {
