@@ -1,0 +1,12 @@
+{
+  "name": "heyfam",
+  "private": true,
+  "scripts": {
+    "build:theme": "wp-scripts build --webpack-src-dir=themes/heyfam-theme/src/interactivity --output-path=themes/heyfam-theme/build",
+    "build": "npm run build:theme",
+    "watch:theme": "wp-scripts start --webpack-src-dir=themes/heyfam-theme/src/interactivity --output-path=themes/heyfam-theme/build"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^28.0.0"
+  }
+}
