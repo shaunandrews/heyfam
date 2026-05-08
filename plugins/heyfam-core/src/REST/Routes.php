@@ -86,6 +86,17 @@ final class Routes {
             ],
             'callback'            => [ $this, 'create_post' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/comments', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_comment' ),
+            'args'                => [
+                'post_id'   => [ 'required' => true, 'type' => 'integer' ],
+                'parent_id' => [ 'required' => false, 'type' => 'integer' ],
+                'body'      => [ 'required' => true, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'create_comment' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -278,6 +289,35 @@ final class Routes {
             );
         }
         return new \WP_REST_Response( [ 'ok' => true, 'post_id' => $result ], 201 );
+    }
+
+    public function create_comment( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id   = (int) $request->get_param( '_blog_id' );
+        $post_id   = (int) $request->get_param( 'post_id' );
+        $parent_id = (int) ( $request->get_param( 'parent_id' ) ?? 0 );
+        $body      = trim( wp_kses_post( (string) $request->get_param( 'body' ) ) );
+
+        if ( $body === '' ) {
+            return new \WP_REST_Response( [ 'error' => 'empty' ], 400 );
+        }
+
+        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id, $parent_id, $body ) {
+            $user = wp_get_current_user();
+            return wp_insert_comment( [
+                'comment_post_ID' => $post_id,
+                'comment_parent'  => $parent_id,
+                'comment_content' => $body,
+                'comment_author'  => $user->display_name,
+                'comment_author_email' => $user->user_email ?: 'no-reply@heyfam.blog',
+                'user_id'         => $user->ID,
+                'comment_approved' => 1,
+            ] );
+        } );
+
+        if ( ! $result ) {
+            return new \WP_REST_Response( [ 'error' => 'insert_failed' ], 500 );
+        }
+        return new \WP_REST_Response( [ 'ok' => true, 'comment_id' => $result ], 201 );
     }
 
     private function normalize_phone( ?string $raw ): ?string {
