@@ -119,6 +119,20 @@ final class Routes {
             ],
             'callback'            => [ $this, 'remove_reaction' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/feed', [
+            'methods'             => 'GET',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
+            'args'                => [ 'since' => [ 'required' => false, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'feed' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/post/(?P<id>\d+)', [
+            'methods'             => 'GET',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
+            'args'                => [ 'since' => [ 'required' => false, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'single_post' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -365,6 +379,69 @@ final class Routes {
             return \HeyFam\Core\Reactions\Manager::remove( $target_type, $target_id, get_current_user_id(), $emoji );
         } );
         return new \WP_REST_Response( [ 'ok' => true, 'removed' => $removed ], 200 );
+    }
+
+    public function feed( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $since   = $request->get_param( 'since' ) ? gmdate( 'Y-m-d H:i:s', strtotime( $request->get_param( 'since' ) ) ) : '1970-01-01 00:00:00';
+
+        $payload = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $since ) {
+            $posts = get_posts( [
+                'numberposts' => 50,
+                'date_query'  => [ [ 'after' => $since, 'inclusive' => false ] ],
+                'orderby'     => 'date',
+                'order'       => 'DESC',
+            ] );
+            return array_map( [ self::class, 'serialize_post' ], $posts );
+        } );
+
+        return new \WP_REST_Response( [ 'ok' => true, 'posts' => $payload, 'now' => gmdate( 'c' ) ], 200 );
+    }
+
+    public function single_post( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $post_id = (int) $request->get_param( 'id' );
+
+        $payload = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id ) {
+            $post = get_post( $post_id );
+            if ( ! $post ) return null;
+            $comments = get_comments( [ 'post_id' => $post_id, 'orderby' => 'comment_date', 'order' => 'ASC' ] );
+            return [
+                'post'      => self::serialize_post( $post ),
+                'comments'  => array_map( [ self::class, 'serialize_comment' ], $comments ),
+                'reactions' => [
+                    'post' => \HeyFam\Core\Reactions\Manager::counts_for( 'post', $post_id ),
+                ],
+            ];
+        } );
+
+        if ( ! $payload ) return new \WP_REST_Response( [ 'error' => 'not_found' ], 404 );
+        return new \WP_REST_Response( [ 'ok' => true ] + $payload + [ 'now' => gmdate( 'c' ) ], 200 );
+    }
+
+    private static function serialize_post( \WP_Post $p ): array {
+        $author = get_userdata( $p->post_author );
+        $thumb  = get_the_post_thumbnail_url( $p, 'large' );
+        return [
+            'id'          => $p->ID,
+            'body'        => $p->post_content,
+            'created_at'  => mysql2date( 'c', $p->post_date_gmt, false ),
+            'author'      => [ 'id' => $p->post_author, 'name' => $author ? $author->display_name : 'Unknown' ],
+            'photo_url'   => $thumb ?: null,
+            'reactions'   => \HeyFam\Core\Reactions\Manager::counts_for( 'post', $p->ID ),
+            'comment_count' => (int) $p->comment_count,
+        ];
+    }
+
+    private static function serialize_comment( \WP_Comment $c ): array {
+        return [
+            'id'         => (int) $c->comment_ID,
+            'parent_id'  => (int) $c->comment_parent,
+            'body'       => $c->comment_content,
+            'created_at' => mysql2date( 'c', $c->comment_date_gmt, false ),
+            'author'     => [ 'id' => (int) $c->user_id, 'name' => $c->comment_author ],
+            'reactions'  => \HeyFam\Core\Reactions\Manager::counts_for( 'comment', (int) $c->comment_ID ),
+        ];
     }
 
     private static function sanitize_emoji( string $raw ): ?string {
