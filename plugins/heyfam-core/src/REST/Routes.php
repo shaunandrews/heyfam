@@ -77,6 +77,15 @@ final class Routes {
             ],
             'callback'            => [ $this, 'invite_accept' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/posts', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_post_to_fam' ),
+            'args'                => [
+                'body' => [ 'required' => false, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'create_post' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -252,6 +261,23 @@ final class Routes {
             'slug'    => trim( $blog->path, '/' ),
             'url'     => $blog->siteurl,
         ], 200 );
+    }
+
+    public function create_post( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $body    = (string) $request->get_param( 'body' );
+        $photo   = $_FILES['photo'] ?? null;
+
+        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $body, $photo ) {
+            return \HeyFam\Core\Posts\Composer::create( get_current_user_id(), $body, $photo );
+        } );
+        if ( is_wp_error( $result ) ) {
+            return new \WP_REST_Response(
+                [ 'error' => $result->get_error_code(), 'message' => $result->get_error_message() ],
+                400
+            );
+        }
+        return new \WP_REST_Response( [ 'ok' => true, 'post_id' => $result ], 201 );
     }
 
     private function normalize_phone( ?string $raw ): ?string {
