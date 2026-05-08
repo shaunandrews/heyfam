@@ -164,6 +164,19 @@ final class Routes {
             'permission_callback' => [ $this, 'verify_twilio_signature' ],
             'callback'            => [ $this, 'twilio_inbound' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/prefs', [
+            'methods'             => 'GET',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
+            'callback'            => [ $this, 'get_prefs' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/prefs', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
+            'args'                => [ 'prefs' => [ 'required' => true, 'type' => 'object' ] ],
+            'callback'            => [ $this, 'set_prefs' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -507,6 +520,18 @@ final class Routes {
         $xml .= '</Response>';
         echo $xml;
         exit;
+    }
+
+    public function get_prefs( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        return new \WP_REST_Response( [ 'prefs' => \HeyFam\Core\Notifs\Prefs::for_user( get_current_user_id(), $blog_id ) ], 200 );
+    }
+
+    public function set_prefs( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $prefs   = (array) $request->get_param( 'prefs' );
+        \HeyFam\Core\Notifs\Prefs::set( get_current_user_id(), $blog_id, $prefs );
+        return new \WP_REST_Response( [ 'ok' => true ], 200 );
     }
 
     private static function serialize_post( \WP_Post $p ): array {
