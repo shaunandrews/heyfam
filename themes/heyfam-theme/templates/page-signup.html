@@ -6,25 +6,25 @@
   <div data-wp-interactive="heyfam/signup" data-wp-init="callbacks.init">
     <h1 data-wp-text="state.title">Start a fam</h1>
 
-    <form data-wp-bind--hidden="state.stage !== 'phone'" data-wp-on--submit="actions.submitPhone">
+    <form data-wp-class--is-hidden="state.stage !== 'phone'" data-wp-on--submit="actions.submitPhone">
       <label>Your phone <input type="tel" data-wp-on--input="actions.updatePhone" data-wp-bind--value="state.phone" placeholder="+15555550100" required /></label>
-      <p class="error" data-wp-bind--hidden="!state.error" data-wp-text="state.error"></p>
+      <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" data-wp-bind--disabled="state.busy">Send code</button>
     </form>
 
-    <form data-wp-bind--hidden="state.stage !== 'code'" data-wp-on--submit="actions.submitCode">
+    <form data-wp-class--is-hidden="state.stage !== 'code'" data-wp-on--submit="actions.submitCode">
       <p>We sent a 6-digit code to <strong data-wp-text="state.phone"></strong>.</p>
       <label>Code <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" data-wp-on--input="actions.updateCode" data-wp-bind--value="state.code" required /></label>
-      <p class="error" data-wp-bind--hidden="!state.error" data-wp-text="state.error"></p>
+      <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" data-wp-bind--disabled="state.busy">Verify</button>
       <button type="button" data-wp-on--click="actions.backToPhone">Use a different number</button>
     </form>
 
-    <form data-wp-bind--hidden="state.stage !== 'profile'" data-wp-on--submit="actions.submitProfile">
+    <form data-wp-class--is-hidden="state.stage !== 'profile'" data-wp-on--submit="actions.submitProfile">
       <label>Your name <input type="text" data-wp-on--input="actions.updateName" data-wp-bind--value="state.name" maxlength="60" required /></label>
       <label>Fam name <input type="text" data-wp-on--input="actions.updateFamName" data-wp-bind--value="state.famName" maxlength="60" required /></label>
       <label>Fam URL <span class="prefix">heyfam.blog/</span><input type="text" data-wp-on--input="actions.updateFamSlug" data-wp-bind--value="state.famSlug" pattern="[a-z0-9][a-z0-9-]{1,30}[a-z0-9]" maxlength="32" required /></label>
-      <p class="error" data-wp-bind--hidden="!state.error" data-wp-text="state.error"></p>
+      <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" data-wp-bind--disabled="state.busy">Create fam</button>
     </form>
   </div>

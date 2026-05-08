@@ -19,7 +19,7 @@
         <div class="heyfam-post-card__body" data-wp-text="context.item.body"></div>
         <img class="heyfam-post-card__photo"
              data-wp-bind--src="context.item.photo_url"
-             data-wp-bind--hidden="!context.item.photo_url" alt="" />
+             data-wp-class--is-hidden="!context.item.photo_url" alt="" />
         <footer class="heyfam-post-card__reactions"
                 data-wp-interactive="heyfam/reactions">
           <ul class="heyfam-reactions">
@@ -40,7 +40,7 @@
         </footer>
       </article>
     </template>
-    <p class="heyfam-feed__empty" data-wp-bind--hidden="state.hasPosts">No posts yet — say hey to your fam.</p>
+    <p class="heyfam-feed__empty" data-wp-class--is-hidden="state.hasPosts">No posts yet — say hey to your fam.</p>
   </section>
   <!-- /wp:html -->
 </div>

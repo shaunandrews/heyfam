@@ -89,3 +89,5 @@ body { font-family: var( --wp--preset--font-family--system ); }
   gap: 0.4rem 1rem; align-items: center;
 }
 .heyfam-account__prefs label { font-size: 0.85rem; }
+
+.is-hidden { display: none !important; }

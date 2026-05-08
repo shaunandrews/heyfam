@@ -6,10 +6,10 @@
   <div data-wp-interactive="heyfam/account" data-wp-init="callbacks.init">
     <h1>Account settings</h1>
 
-    <p data-wp-bind--hidden="!state.loading">Loading…</p>
-    <p class="error" data-wp-bind--hidden="!state.loadError" data-wp-text="state.loadError"></p>
+    <p data-wp-class--is-hidden="!state.loading">Loading…</p>
+    <p class="error" data-wp-class--is-hidden="!state.loadError" data-wp-text="state.loadError"></p>
 
-    <p data-wp-bind--hidden="state.fams.length || state.loading">You aren't in any fams yet. <a href="/signup">Start a fam</a> or check your invite link.</p>
+    <p data-wp-class--is-hidden="state.fams.length || state.loading">You aren't in any fams yet. <a href="/signup">Start a fam</a> or check your invite link.</p>
 
     <template data-wp-each="state.fams" data-wp-each-key="context.item.blog_id">
       <section class="heyfam-account__fam">
@@ -38,11 +38,11 @@
       </section>
     </template>
 
-    <section class="heyfam-account__push" data-wp-bind--hidden="!state.fams.length">
+    <section class="heyfam-account__push" data-wp-class--is-hidden="!state.fams.length">
       <h2>Push notifications</h2>
-      <p data-wp-bind--hidden="state.pushPermission !== 'default'">Browser push is off. <button type="button" data-wp-on--click="actions.requestPush">Enable push</button></p>
-      <p data-wp-bind--hidden="state.pushPermission !== 'granted'">Push is enabled in this browser.</p>
-      <p data-wp-bind--hidden="state.pushPermission !== 'denied'">Push is blocked. Update your browser's site settings to re-enable.</p>
+      <p data-wp-class--is-hidden="state.pushPermission !== 'default'">Browser push is off. <button type="button" data-wp-on--click="actions.requestPush">Enable push</button></p>
+      <p data-wp-class--is-hidden="state.pushPermission !== 'granted'">Push is enabled in this browser.</p>
+      <p data-wp-class--is-hidden="state.pushPermission !== 'denied'">Push is blocked. Update your browser's site settings to re-enable.</p>
     </section>
 
     <section class="heyfam-account__logout">

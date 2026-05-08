@@ -7,7 +7,7 @@
     <span data-wp-text="state.currentName">Pick a fam</span>
     <span aria-hidden="true">▾</span>
   </button>
-  <ul class="heyfam-fam-picker__menu" data-wp-bind--hidden="!state.open">
+  <ul class="heyfam-fam-picker__menu" data-wp-class--is-hidden="!state.open">
     <template data-wp-each="state.fams">
       <li>
         <a data-wp-bind--href="context.item.url" data-wp-text="context.item.name"></a>
