@@ -1,0 +1,19 @@
+<!-- wp:html -->
+<div class="heyfam-fam-picker"
+     data-wp-interactive="heyfam/famPicker"
+     data-wp-init="callbacks.load">
+  <button class="heyfam-fam-picker__toggle" data-wp-on--click="actions.toggle"
+          data-wp-bind--aria-expanded="state.open">
+    <span data-wp-text="state.currentName">Pick a fam</span>
+    <span aria-hidden="true">▾</span>
+  </button>
+  <ul class="heyfam-fam-picker__menu" data-wp-bind--hidden="!state.open">
+    <template data-wp-each="state.fams">
+      <li>
+        <a data-wp-bind--href="context.item.url" data-wp-text="context.item.name"></a>
+      </li>
+    </template>
+    <li><a href="/signup">+ New fam</a></li>
+  </ul>
+</div>
+<!-- /wp:html -->

@@ -177,6 +177,16 @@ final class Routes {
             'args'                => [ 'prefs' => [ 'required' => true, 'type' => 'object' ] ],
             'callback'            => [ $this, 'set_prefs' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/me/fams', [
+            'methods'             => 'GET',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => static function () {
+                return new \WP_REST_Response( [
+                    'fams' => \HeyFam\Core\Fams\Membership::user_blogs( get_current_user_id() ),
+                ], 200 );
+            },
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
