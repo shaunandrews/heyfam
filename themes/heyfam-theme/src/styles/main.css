@@ -1,0 +1,35 @@
+:root { color-scheme: light; }
+
+body { font-family: var( --wp--preset--font-family--system ); }
+
+.heyfam-header { padding: 1rem; border-bottom: 1px solid #eee; }
+.heyfam-fam-picker { position: relative; }
+.heyfam-fam-picker__toggle {
+  background: none; border: 1px solid #e3dac9; border-radius: 8px;
+  padding: 0.4rem 0.7rem; cursor: pointer;
+}
+.heyfam-fam-picker__menu {
+  position: absolute; right: 0; top: calc( 100% + 0.25rem ); min-width: 200px;
+  background: var( --wp--preset--color--surface ); border: 1px solid #e3dac9;
+  border-radius: 8px; padding: 0.5rem; list-style: none;
+  box-shadow: 0 6px 24px rgba( 31, 29, 26, 0.06 );
+}
+.heyfam-fam-picker__menu a { display: block; padding: 0.4rem 0.5rem; text-decoration: none; }
+.heyfam-fam-picker__menu a:hover { background: #f5efe1; border-radius: 6px; }
+
+.heyfam-landing { text-align: center; padding-block: 4rem; }
+
+.heyfam-feed { display: grid; gap: 1rem; padding-block: 1rem; }
+.heyfam-post-card {
+  background: var( --wp--preset--color--surface );
+  border: 1px solid #efe7d6; border-radius: 16px; padding: 1rem;
+  display: grid; gap: 0.6rem;
+}
+.heyfam-post-card__header { display: flex; gap: 0.5rem; align-items: baseline; color: #6e655c; font-size: 0.8rem; }
+.heyfam-post-card__photo { max-width: 100%; border-radius: 12px; }
+.heyfam-reactions { display: flex; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
+.heyfam-reactions button {
+  border: 1px solid #efe7d6; border-radius: 999px; padding: 0.15rem 0.6rem;
+  background: white; cursor: pointer; font: inherit;
+}
+.heyfam-feed__empty { color: #6e655c; }
