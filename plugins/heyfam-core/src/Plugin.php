@@ -7,6 +7,7 @@ final class Plugin {
 		new \HeyFam\Core\REST\Routes();
 		new \HeyFam\Core\Fams\Roles();
 		new \HeyFam\Core\Comments\Threading();
+		new \HeyFam\Core\PWA\Serve();
 
 		add_action( 'wp_initialize_site', static function ( \WP_Site $site ) {
 			\HeyFam\Core\Fams\Invites::create_table(      (int) $site->blog_id );
