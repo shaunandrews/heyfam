@@ -47,14 +47,19 @@ final class PhoneSignup {
 
 	/**
 	 * Returns the user_id; creates the user if needed.
+	 *
+	 * Identity is the `phone_e164` user_meta value (NOT user_login).
+	 * `wp_insert_user` strips `+` from user_login via sanitize_user, so
+	 * looking up by user_login('+15555550100') would miss a user stored
+	 * as '15555550100'.
 	 */
 	public static function ensure_user( string $phone_e164, string $display_name = '' ): int {
-		$existing = get_user_by( 'login', $phone_e164 );
+		$existing = self::find_user_by_phone( $phone_e164 );
 		if ( $existing ) {
-			return (int) $existing->ID;
+			return (int) $existing;
 		}
 		$user_id = wp_insert_user( [
-			'user_login'    => $phone_e164,
+			'user_login'    => self::user_login_for_phone( $phone_e164 ),
 			'user_pass'     => wp_generate_password( 32, true, true ),
 			'display_name'  => $display_name !== '' ? $display_name : 'New User',
 			'nickname'      => $display_name !== '' ? $display_name : 'New User',
@@ -65,5 +70,26 @@ final class PhoneSignup {
 		update_user_meta( $user_id, 'phone_e164', $phone_e164 );
 		update_user_meta( $user_id, 'phone_verified_at', gmdate( 'c' ) );
 		return (int) $user_id;
+	}
+
+	/** Returns user_id or null. */
+	public static function find_user_by_phone( string $phone_e164 ): ?int {
+		$users = get_users( [
+			'meta_key'    => 'phone_e164',
+			'meta_value'  => $phone_e164,
+			'number'      => 1,
+			'fields'      => 'ID',
+			'blog_id'     => 0, // any-site search on multisite
+		] );
+		return $users ? (int) $users[0] : null;
+	}
+
+	/**
+	 * `+` is stripped by sanitize_user. Use a stable, predictable login
+	 * derived from the phone (digits only, prefixed) so existing-user
+	 * lookups by login still work for legacy code paths.
+	 */
+	public static function user_login_for_phone( string $phone_e164 ): string {
+		return 'p' . preg_replace( '/\D/', '', $phone_e164 );
 	}
 }

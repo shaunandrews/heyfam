@@ -26,6 +26,8 @@ final class Routes {
                 'phone'        => [ 'required' => true, 'type' => 'string' ],
                 'code'         => [ 'required' => true, 'type' => 'string' ],
                 'display_name' => [ 'required' => false, 'type' => 'string' ],
+                'fam_name'     => [ 'required' => false, 'type' => 'string' ],
+                'fam_slug'     => [ 'required' => false, 'type' => 'string' ],
             ],
             'callback'            => [ $this, 'signup_verify' ],
         ] );
@@ -239,7 +241,35 @@ final class Routes {
         wp_set_current_user( $user_id );
         wp_set_auth_cookie( $user_id, true );
 
-        return new \WP_REST_Response( [ 'ok' => true, 'user_id' => $user_id ], 200 );
+        // If fam details are provided, create the fam in the same request so
+        // the client doesn't have to fight the new-session-vs-new-nonce window
+        // that breaks REST cookie auth on the immediately-following request.
+        $fam_name = sanitize_text_field( (string) ( $request->get_param( 'fam_name' ) ?? '' ) );
+        $fam_slug = sanitize_title( (string) ( $request->get_param( 'fam_slug' ) ?? '' ) );
+        $fam_url  = null;
+        $fam_blog = null;
+        if ( $fam_name !== '' && $fam_slug !== '' ) {
+            $result = \HeyFam\Core\Fams\FamCreation::create( $user_id, $fam_name, $fam_slug );
+            if ( is_wp_error( $result ) ) {
+                return new \WP_REST_Response( [
+                    'ok'      => false,
+                    'error'   => $result->get_error_code(),
+                    'message' => $result->get_error_message(),
+                    'user_id' => $user_id,
+                ], 400 );
+            }
+            $details   = get_blog_details( (int) $result );
+            $fam_blog  = (int) $result;
+            $fam_url   = $details->siteurl;
+        }
+
+        return new \WP_REST_Response( [
+            'ok'         => true,
+            'user_id'    => $user_id,
+            'nonce'      => wp_create_nonce( 'wp_rest' ),
+            'fam_blog'   => $fam_blog,
+            'fam_url'    => $fam_url,
+        ], 200 );
     }
 
     public function login_verify( \WP_REST_Request $request ): \WP_REST_Response {
@@ -256,16 +286,20 @@ final class Routes {
             return new \WP_REST_Response( [ 'error' => 'bad_code' ], 401 );
         }
 
-        $user = get_user_by( 'login', $phone );
-        if ( ! $user ) {
+        $user_id = PhoneSignup::find_user_by_phone( $phone );
+        if ( ! $user_id ) {
             // Phone enumeration prevention: same shape as success.
             return new \WP_REST_Response( [ 'error' => 'bad_code' ], 401 );
         }
 
         RateLimit::clear_failures( $phone );
-        wp_set_current_user( $user->ID );
-        wp_set_auth_cookie( $user->ID, true );
-        return new \WP_REST_Response( [ 'ok' => true, 'user_id' => $user->ID ], 200 );
+        wp_set_current_user( $user_id );
+        wp_set_auth_cookie( $user_id, true );
+        return new \WP_REST_Response( [
+            'ok'      => true,
+            'user_id' => $user_id,
+            'nonce'   => wp_create_nonce( 'wp_rest' ),
+        ], 200 );
     }
 
     public function create_fam( \WP_REST_Request $request ): \WP_REST_Response {
@@ -376,6 +410,7 @@ final class Routes {
             'blog_id' => $blog_id,
             'slug'    => trim( $blog->path, '/' ),
             'url'     => $blog->siteurl,
+            'nonce'   => wp_create_nonce( 'wp_rest' ),
         ], 200 );
     }
 
