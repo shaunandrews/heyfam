@@ -29,6 +29,23 @@ final class Routes {
             ],
             'callback'            => [ $this, 'signup_verify' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/login/start', [
+            'methods'             => 'POST',
+            'permission_callback' => '__return_true',
+            'args'                => [ 'phone' => [ 'required' => true, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'signup_start' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/login/verify', [
+            'methods'             => 'POST',
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'phone' => [ 'required' => true, 'type' => 'string' ],
+                'code'  => [ 'required' => true, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'login_verify' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -75,6 +92,32 @@ final class Routes {
         wp_set_auth_cookie( $user_id, true );
 
         return new \WP_REST_Response( [ 'ok' => true, 'user_id' => $user_id ], 200 );
+    }
+
+    public function login_verify( \WP_REST_Request $request ): \WP_REST_Response {
+        $phone = $this->normalize_phone( $request->get_param( 'phone' ) );
+        $code  = trim( (string) $request->get_param( 'code' ) );
+        if ( $phone === null || $code === '' ) {
+            return new \WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
+        }
+        if ( RateLimit::lockout_check( $phone ) ) {
+            return new \WP_REST_Response( [ 'error' => 'locked_out' ], 429 );
+        }
+        if ( ! PhoneSignup::check_code( $phone, $code ) ) {
+            RateLimit::record_failure( $phone );
+            return new \WP_REST_Response( [ 'error' => 'bad_code' ], 401 );
+        }
+
+        $user = get_user_by( 'login', $phone );
+        if ( ! $user ) {
+            // Phone enumeration prevention: same shape as success.
+            return new \WP_REST_Response( [ 'error' => 'bad_code' ], 401 );
+        }
+
+        RateLimit::clear_failures( $phone );
+        wp_set_current_user( $user->ID );
+        wp_set_auth_cookie( $user->ID, true );
+        return new \WP_REST_Response( [ 'ok' => true, 'user_id' => $user->ID ], 200 );
     }
 
     private function normalize_phone( ?string $raw ): ?string {
