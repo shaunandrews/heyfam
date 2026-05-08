@@ -33,3 +33,15 @@ body { font-family: var( --wp--preset--font-family--system ); }
   background: white; cursor: pointer; font: inherit;
 }
 .heyfam-feed__empty { color: #6e655c; }
+
+.heyfam-composer {
+  display: grid; gap: 0.5rem; padding: 0.75rem;
+  background: var( --wp--preset--color--surface );
+  border: 1px solid #efe7d6; border-radius: 16px;
+}
+.heyfam-composer textarea { resize: vertical; padding: 0.5rem; border: 1px solid #efe7d6; border-radius: 8px; font: inherit; }
+.heyfam-composer__photo { font-size: 0.85rem; color: #6e655c; cursor: pointer; }
+.heyfam-composer button {
+  align-self: end; padding: 0.5rem 1rem; border: 0;
+  background: var( --wp--preset--color--accent ); color: white; border-radius: 999px; cursor: pointer;
+}

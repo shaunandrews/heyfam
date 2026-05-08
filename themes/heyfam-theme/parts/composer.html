@@ -1,0 +1,16 @@
+<!-- wp:html -->
+<form class="heyfam-composer"
+      data-wp-interactive="heyfam/composer"
+      data-wp-on--submit="actions.submit">
+  <textarea name="body" rows="2" placeholder="Hey fam…" data-wp-bind--value="state.body"
+            data-wp-on--input="actions.updateBody" required></textarea>
+  <label class="heyfam-composer__photo">
+    <input type="file" accept="image/*" data-wp-on--change="actions.pickPhoto" hidden />
+    <span data-wp-text="state.photoLabel">Add photo</span>
+  </label>
+  <button type="submit" data-wp-bind--disabled="state.submitting">
+    <span data-wp-bind--hidden="state.submitting">Post</span>
+    <span data-wp-bind--hidden="!state.submitting">Posting…</span>
+  </button>
+</form>
+<!-- /wp:html -->
