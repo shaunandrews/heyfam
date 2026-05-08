@@ -9,7 +9,8 @@ final class Plugin {
 		new \HeyFam\Core\Comments\Threading();
 
 		add_action( 'wp_initialize_site', static function ( \WP_Site $site ) {
-			\HeyFam\Core\Fams\Invites::create_table( (int) $site->blog_id );
+			\HeyFam\Core\Fams\Invites::create_table(      (int) $site->blog_id );
+			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}, 30, 1 );
 	}
 
@@ -17,6 +18,9 @@ final class Plugin {
 		\HeyFam\Core\Fams\Roles::seed_all_existing_sites();
 		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
 			\HeyFam\Core\Fams\Invites::create_table( (int) $site->blog_id );
+		}
+		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
+			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}
 		flush_rewrite_rules();
 	}
