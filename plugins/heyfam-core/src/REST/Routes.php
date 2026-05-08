@@ -172,26 +172,12 @@ final class Routes {
         ], 200 );
     }
 
-    public function require_fam_cap_invite( \WP_REST_Request $request ) {
-        return $this->require_fam_cap( $request, 'heyfam_invite' );
+    public function require_fam_cap_invite( \WP_REST_Request $request ): bool {
+        return \HeyFam\Core\Auth\Authorization::require_cap( $request, 'heyfam_invite' );
     }
 
-    private function require_fam_cap( \WP_REST_Request $request, string $cap ) {
-        if ( ! is_user_logged_in() ) return false;
-        $slug    = (string) $request->get_param( 'fam' );
-        $blog_id = $this->slug_to_blog_id( $slug );
-        if ( ! $blog_id ) return false;
-        $request->set_param( '_blog_id', $blog_id );
-        return \HeyFam\Core\Fams\Membership::user_can_in_fam( get_current_user_id(), $blog_id, $cap );
-    }
-
-    private function slug_to_blog_id( string $slug ): ?int {
-        $main = get_blog_details( get_network()->site_id );
-        $details = get_blog_details( [
-            'domain' => $main->domain,
-            'path'   => rtrim( $main->path, '/' ) . '/' . $slug . '/',
-        ] );
-        return $details ? (int) $details->blog_id : null;
+    private function require_fam_cap( \WP_REST_Request $request, string $cap ): bool {
+        return \HeyFam\Core\Auth\Authorization::require_cap( $request, $cap );
     }
 
     public function invite_issue( \WP_REST_Request $request ): \WP_REST_Response {
