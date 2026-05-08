@@ -46,6 +46,16 @@ final class Routes {
             ],
             'callback'            => [ $this, 'login_verify' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/fams', [
+            'methods'             => 'POST',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'args'                => [
+                'name' => [ 'required' => true, 'type' => 'string' ],
+                'slug' => [ 'required' => true, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'create_fam' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -118,6 +128,27 @@ final class Routes {
         wp_set_current_user( $user->ID );
         wp_set_auth_cookie( $user->ID, true );
         return new \WP_REST_Response( [ 'ok' => true, 'user_id' => $user->ID ], 200 );
+    }
+
+    public function create_fam( \WP_REST_Request $request ): \WP_REST_Response {
+        $name = sanitize_text_field( (string) $request->get_param( 'name' ) );
+        $slug = sanitize_title( (string) $request->get_param( 'slug' ) );
+
+        $result = \HeyFam\Core\Fams\FamCreation::create( get_current_user_id(), $name, $slug );
+        if ( is_wp_error( $result ) ) {
+            return new \WP_REST_Response(
+                [ 'error' => $result->get_error_code(), 'message' => $result->get_error_message() ],
+                400
+            );
+        }
+
+        $details = get_blog_details( $result );
+        return new \WP_REST_Response( [
+            'ok'      => true,
+            'blog_id' => $result,
+            'slug'    => trim( $details->path, '/' ),
+            'url'     => $details->siteurl,
+        ], 200 );
     }
 
     private function normalize_phone( ?string $raw ): ?string {
