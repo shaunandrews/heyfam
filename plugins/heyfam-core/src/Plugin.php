@@ -5,10 +5,11 @@ final class Plugin {
     public function boot(): void {
         new \HeyFam\Core\Privacy\PIIShield();
         new \HeyFam\Core\REST\Routes();
+        new \HeyFam\Core\Fams\Roles();
     }
 
     public static function activate(): void {
-        // Tables and roles get created here as modules are added.
+        \HeyFam\Core\Fams\Roles::seed_all_existing_sites();
         flush_rewrite_rules();
     }
 
