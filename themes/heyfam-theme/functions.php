@@ -49,3 +49,7 @@ add_action( 'wp_head', static function () {
     echo '<meta name="theme-color" content="#d97706">' . "\n";
     echo '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' . "\n";
 } );
+
+add_action( 'init', static function () {
+    add_rewrite_rule( '^p/(\d+)/?$', 'index.php?p=$matches[1]', 'top' );
+} );

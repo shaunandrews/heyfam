@@ -45,3 +45,17 @@ body { font-family: var( --wp--preset--font-family--system ); }
   align-self: end; padding: 0.5rem 1rem; border: 0;
   background: var( --wp--preset--color--accent ); color: white; border-radius: 999px; cursor: pointer;
 }
+
+.heyfam-single { display: grid; gap: 1rem; padding-block: 1rem; }
+.heyfam-comments { display: grid; gap: 0.75rem; }
+.heyfam-comment {
+  background: var( --wp--preset--color--surface );
+  border: 1px solid #efe7d6; border-radius: 12px; padding: 0.6rem 0.8rem;
+}
+.heyfam-comment--child { margin-left: 1.5rem; }
+.heyfam-comment-form { display: grid; gap: 0.4rem; }
+.heyfam-comment-form textarea { padding: 0.5rem; border: 1px solid #efe7d6; border-radius: 8px; font: inherit; }
+.heyfam-comment-form button {
+  justify-self: end; padding: 0.4rem 0.9rem; border: 0;
+  background: var( --wp--preset--color--accent ); color: white; border-radius: 999px;
+}
