@@ -4,11 +4,19 @@ namespace HeyFam\Core\Auth;
 use Twilio\Exceptions\TwilioException;
 
 final class PhoneSignup {
+	private static function is_dev_mode(): bool {
+		return ! getenv( 'TWILIO_ACCOUNT_SID' );
+	}
+
 	/**
 	 * Returns true on success. Always returns the same shape on enumeration paths
 	 * to prevent existence leaks.
 	 */
 	public static function start_verification( string $phone_e164 ): bool {
+		if ( self::is_dev_mode() ) {
+			error_log( "[heyfam dev] OTP for $phone_e164 is 000000" );
+			return true;
+		}
 		try {
 			TwilioClient::rest()->verify->v2
 				->services( TwilioClient::verify_sid() )
@@ -22,6 +30,9 @@ final class PhoneSignup {
 	}
 
 	public static function check_code( string $phone_e164, string $code ): bool {
+		if ( self::is_dev_mode() ) {
+			return $code === '000000';
+		}
 		try {
 			$check = TwilioClient::rest()->verify->v2
 				->services( TwilioClient::verify_sid() )
