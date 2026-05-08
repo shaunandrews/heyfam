@@ -97,6 +97,28 @@ final class Routes {
             ],
             'callback'            => [ $this, 'create_comment' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/reactions', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_react' ),
+            'args'                => [
+                'target_type' => [ 'required' => true, 'type' => 'string', 'enum' => [ 'post', 'comment' ] ],
+                'target_id'   => [ 'required' => true, 'type' => 'integer' ],
+                'emoji'       => [ 'required' => true, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'add_reaction' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/reactions', [
+            'methods'             => 'DELETE',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_react' ),
+            'args'                => [
+                'target_type' => [ 'required' => true, 'type' => 'string', 'enum' => [ 'post', 'comment' ] ],
+                'target_id'   => [ 'required' => true, 'type' => 'integer' ],
+                'emoji'       => [ 'required' => true, 'type' => 'string' ],
+            ],
+            'callback'            => [ $this, 'remove_reaction' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -318,6 +340,37 @@ final class Routes {
             return new \WP_REST_Response( [ 'error' => 'insert_failed' ], 500 );
         }
         return new \WP_REST_Response( [ 'ok' => true, 'comment_id' => $result ], 201 );
+    }
+
+    public function add_reaction( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id     = (int) $request->get_param( '_blog_id' );
+        $target_type = (string) $request->get_param( 'target_type' );
+        $target_id   = (int) $request->get_param( 'target_id' );
+        $emoji       = self::sanitize_emoji( (string) $request->get_param( 'emoji' ) );
+        if ( $emoji === null ) return new \WP_REST_Response( [ 'error' => 'bad_emoji' ], 400 );
+
+        $added = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $target_type, $target_id, $emoji ) {
+            return \HeyFam\Core\Reactions\Manager::add( $target_type, $target_id, get_current_user_id(), $emoji );
+        } );
+        return new \WP_REST_Response( [ 'ok' => true, 'added' => $added ], $added ? 201 : 200 );
+    }
+
+    public function remove_reaction( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id     = (int) $request->get_param( '_blog_id' );
+        $target_type = (string) $request->get_param( 'target_type' );
+        $target_id   = (int) $request->get_param( 'target_id' );
+        $emoji       = self::sanitize_emoji( (string) $request->get_param( 'emoji' ) );
+
+        $removed = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $target_type, $target_id, $emoji ) {
+            return \HeyFam\Core\Reactions\Manager::remove( $target_type, $target_id, get_current_user_id(), $emoji );
+        } );
+        return new \WP_REST_Response( [ 'ok' => true, 'removed' => $removed ], 200 );
+    }
+
+    private static function sanitize_emoji( string $raw ): ?string {
+        $raw = trim( $raw );
+        if ( $raw === '' || strlen( $raw ) > 32 ) return null;
+        return $raw;
     }
 
     private function normalize_phone( ?string $raw ): ?string {
