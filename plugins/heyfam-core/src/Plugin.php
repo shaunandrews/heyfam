@@ -14,6 +14,24 @@ final class Plugin {
 			\HeyFam\Core\Fams\Invites::create_table(      (int) $site->blog_id );
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}, 30, 1 );
+
+		add_action( 'wp_insert_post', static function ( int $post_id, \WP_Post $post, bool $update ) {
+			if ( $update || $post->post_status !== 'publish' || $post->post_type !== 'post' ) return;
+			\HeyFam\Core\Notifs\FanOut::schedule_post( get_current_blog_id(), $post_id );
+		}, 20, 3 );
+
+		add_action( 'wp_insert_comment', static function ( int $comment_id, \WP_Comment $comment ) {
+			if ( (int) $comment->comment_approved !== 1 ) return;
+			\HeyFam\Core\Notifs\FanOut::schedule_comment(
+				get_current_blog_id(),
+				(int) $comment->comment_post_ID,
+				$comment_id
+			);
+		}, 20, 2 );
+
+		add_action( 'heyfam_reaction_added', static function ( string $target_type, int $target_id, int $user_id ) {
+			\HeyFam\Core\Notifs\FanOut::schedule_reaction( get_current_blog_id(), $target_type, $target_id, $user_id );
+		}, 10, 3 );
 	}
 
 	public static function activate(): void {

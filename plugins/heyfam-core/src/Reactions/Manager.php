@@ -34,6 +34,9 @@ final class Manager {
 			"INSERT IGNORE INTO $table (target_type, target_id, user_id, emoji) VALUES (%s, %d, %d, %s)",
 			$target_type, $target_id, $user_id, $emoji
 		) );
+		if ( (int) $rows > 0 ) {
+			do_action( 'heyfam_reaction_added', $target_type, $target_id, $user_id );
+		}
 		return (int) $rows > 0;
 	}
 
