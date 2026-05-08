@@ -9,18 +9,28 @@ add_action( 'after_setup_theme', static function () {
 } );
 
 add_action( 'wp_enqueue_scripts', static function () {
-    if ( ! is_user_logged_in() && ! is_page_template( 'templates/index.html' ) ) {
-        // Anonymous home gets a plain landing page.
+    // Anonymous visitors only get the bundle on the landing page and on the
+    // public auth flow pages (signup, login, invite). Logged-in users get it
+    // everywhere.
+    $public_auth_templates = [ 'page-signup', 'page-login', 'page-invite' ];
+    if (
+        ! is_user_logged_in()
+        && ! is_page_template( 'templates/index.html' )
+        && ! ( is_page() && in_array( get_page_template_slug(), $public_auth_templates, true ) )
+    ) {
         return;
     }
 
     $build = get_theme_file_path( 'build/index.asset.php' );
-    $deps  = file_exists( $build ) ? require $build : [ 'dependencies' => [], 'version' => '0.1.0' ];
+    $asset = file_exists( $build ) ? require $build : [ 'dependencies' => [], 'version' => '0.1.0' ];
+    // The asset.php from wp-scripts lists script-handle dependencies (e.g. "wp-interactivity"),
+    // not script-module IDs. Translate the only one we care about and drop the rest.
+    $module_deps = [ '@wordpress/interactivity' ];
     wp_enqueue_script_module(
         'heyfam-interactivity',
         get_theme_file_uri( 'build/index.js' ),
-        array_merge( [ '@wordpress/interactivity' ], $deps['dependencies'] ?? [] ),
-        $deps['version'] ?? '0.1.0'
+        $module_deps,
+        $asset['version'] ?? '0.1.0'
     );
 
     wp_enqueue_style(
@@ -41,6 +51,7 @@ add_action( 'wp_enqueue_scripts', static function () {
         'vapidKey'  => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
         'apiBase'   => '/wp-json/heyfam/v1',
         'userId'    => get_current_user_id(),
+        'logoutUrl' => is_user_logged_in() ? wp_logout_url( '/' ) : '',
     ] );
 } );
 

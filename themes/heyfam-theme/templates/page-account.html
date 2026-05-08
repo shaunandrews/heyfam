@@ -1,0 +1,54 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-account"} -->
+<div class="wp-block-group heyfam-account">
+  <!-- wp:html -->
+  <div data-wp-interactive="heyfam/account" data-wp-init="callbacks.init">
+    <h1>Account settings</h1>
+
+    <p data-wp-bind--hidden="!state.loading">Loading…</p>
+    <p class="error" data-wp-bind--hidden="!state.loadError" data-wp-text="state.loadError"></p>
+
+    <p data-wp-bind--hidden="state.fams.length || state.loading">You aren't in any fams yet. <a href="/signup">Start a fam</a> or check your invite link.</p>
+
+    <template data-wp-each="state.fams" data-wp-each-key="context.item.blog_id">
+      <section class="heyfam-account__fam">
+        <h2><a data-wp-bind--href="context.item.url" data-wp-text="context.item.name"></a></h2>
+        <div class="heyfam-account__prefs">
+          <span></span>
+          <strong>push</strong>
+          <strong>email</strong>
+          <strong>SMS</strong>
+
+          <label>New posts</label>
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.posts.push"     data-wp-bind--data-fam="context.item.slug" data-event="posts" data-channel="push" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.posts.email"    data-wp-bind--data-fam="context.item.slug" data-event="posts" data-channel="email" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.posts.sms"      data-wp-bind--data-fam="context.item.slug" data-event="posts" data-channel="sms" data-wp-on--change="actions.togglePref" />
+
+          <label>Comments</label>
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.comments.push"  data-wp-bind--data-fam="context.item.slug" data-event="comments" data-channel="push" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.comments.email" data-wp-bind--data-fam="context.item.slug" data-event="comments" data-channel="email" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.comments.sms"   data-wp-bind--data-fam="context.item.slug" data-event="comments" data-channel="sms" data-wp-on--change="actions.togglePref" />
+
+          <label>Reactions</label>
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.reactions.push"  data-wp-bind--data-fam="context.item.slug" data-event="reactions" data-channel="push" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.reactions.email" data-wp-bind--data-fam="context.item.slug" data-event="reactions" data-channel="email" data-wp-on--change="actions.togglePref" />
+          <input type="checkbox" data-wp-bind--checked="context.item.prefs.reactions.sms"   data-wp-bind--data-fam="context.item.slug" data-event="reactions" data-channel="sms" data-wp-on--change="actions.togglePref" />
+        </div>
+      </section>
+    </template>
+
+    <section class="heyfam-account__push" data-wp-bind--hidden="!state.fams.length">
+      <h2>Push notifications</h2>
+      <p data-wp-bind--hidden="state.pushPermission !== 'default'">Browser push is off. <button type="button" data-wp-on--click="actions.requestPush">Enable push</button></p>
+      <p data-wp-bind--hidden="state.pushPermission !== 'granted'">Push is enabled in this browser.</p>
+      <p data-wp-bind--hidden="state.pushPermission !== 'denied'">Push is blocked. Update your browser's site settings to re-enable.</p>
+    </section>
+
+    <section class="heyfam-account__logout">
+      <a data-wp-bind--href="state.logoutUrl">Log out</a>
+    </section>
+  </div>
+  <!-- /wp:html -->
+</div>
+<!-- /wp:group -->

@@ -59,3 +59,33 @@ body { font-family: var( --wp--preset--font-family--system ); }
   justify-self: end; padding: 0.4rem 0.9rem; border: 0;
   background: var( --wp--preset--color--accent ); color: white; border-radius: 999px;
 }
+
+.heyfam-auth { max-width: 420px; padding-block: 2rem; }
+.heyfam-auth h1 { margin-bottom: 1rem; }
+.heyfam-auth form { display: grid; gap: 0.75rem; }
+.heyfam-auth label { display: grid; gap: 0.25rem; font-size: 0.85rem; color: #6e655c; }
+.heyfam-auth input[type=tel],
+.heyfam-auth input[type=text] {
+  font: inherit; padding: 0.6rem; border: 1px solid #e3dac9;
+  border-radius: 8px; background: #fff;
+}
+.heyfam-auth input:focus { outline: 2px solid var( --wp--preset--color--accent ); outline-offset: 1px; }
+.heyfam-auth button {
+  font: inherit; padding: 0.6rem 1rem; border: 0; border-radius: 999px;
+  background: var( --wp--preset--color--accent ); color: white; cursor: pointer;
+}
+.heyfam-auth button[type=button] { background: transparent; color: var( --wp--preset--color--muted ); }
+.heyfam-auth .error { color: #b04141; font-size: 0.85rem; margin: 0; }
+.heyfam-auth .prefix { font-size: 0.85rem; color: #6e655c; padding-right: 0.25rem; }
+
+.heyfam-account { display: grid; gap: 1.5rem; padding-block: 1rem; }
+.heyfam-account__fam {
+  background: var( --wp--preset--color--surface );
+  border: 1px solid #efe7d6; border-radius: 16px; padding: 1rem;
+}
+.heyfam-account__fam h2 { margin-top: 0; }
+.heyfam-account__prefs {
+  display: grid; grid-template-columns: 1fr repeat(3, auto);
+  gap: 0.4rem 1rem; align-items: center;
+}
+.heyfam-account__prefs label { font-size: 0.85rem; }

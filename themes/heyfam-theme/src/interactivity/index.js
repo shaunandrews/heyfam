@@ -5,3 +5,7 @@ import './comments.js';
 import './feed-poll.js';
 import './fam-picker.js';
 import './push-subscribe.js';
+import './signup.js';
+import './login.js';
+import './invite.js';
+import './account.js';
