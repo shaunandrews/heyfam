@@ -78,6 +78,13 @@ final class Routes {
             'callback'            => [ $this, 'invite_accept' ],
         ] );
 
+        register_rest_route( 'heyfam/v1', '/invites/preview', [
+            'methods'             => 'GET',
+            'permission_callback' => '__return_true',
+            'args'                => [ 'code' => [ 'required' => true, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'invite_preview' ],
+        ] );
+
         register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/posts', [
             'methods'             => 'POST',
             'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_post_to_fam' ),
@@ -370,6 +377,39 @@ final class Routes {
             'slug'    => trim( $blog->path, '/' ),
             'url'     => $blog->siteurl,
         ], 200 );
+    }
+
+    public function invite_preview( \WP_REST_Request $request ): \WP_REST_Response {
+        $code = trim( (string) $request->get_param( 'code' ) );
+        if ( $code === '' ) return new \WP_REST_Response( [ 'error' => 'invalid' ], 400 );
+
+        $hash = \HeyFam\Core\Fams\Invites::hash( $code );
+        foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
+            global $wpdb;
+            $blog_id = (int) $site->blog_id;
+            $table = \HeyFam\Core\Fams\Invites::table_name( $blog_id );
+            $row = $wpdb->get_row( $wpdb->prepare(
+                "SELECT phone_e164, invited_by_user_id, expires_at, used_at FROM $table WHERE code_hash = %s",
+                $hash
+            ), ARRAY_A );
+            if ( $row ) {
+                if ( $row['used_at'] ) return new \WP_REST_Response( [ 'error' => 'used' ], 410 );
+                if ( strtotime( $row['expires_at'] ) < time() ) return new \WP_REST_Response( [ 'error' => 'expired' ], 410 );
+                $blog = get_blog_details( $blog_id );
+                $inviter = get_userdata( (int) $row['invited_by_user_id'] );
+                return new \WP_REST_Response( [
+                    'fam_name'    => $blog->blogname,
+                    'inviter'     => $inviter ? $inviter->display_name : 'Someone',
+                    'phone_hint'  => self::mask_phone( $row['phone_e164'] ),
+                ], 200 );
+            }
+        }
+        return new \WP_REST_Response( [ 'error' => 'invalid' ], 404 );
+    }
+
+    private static function mask_phone( string $e164 ): string {
+        if ( strlen( $e164 ) <= 4 ) return $e164;
+        return substr( $e164, 0, 2 ) . str_repeat( '•', strlen( $e164 ) - 4 ) . substr( $e164, -2 );
     }
 
     public function create_post( \WP_REST_Request $request ): \WP_REST_Response {

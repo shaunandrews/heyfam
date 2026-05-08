@@ -8,6 +8,7 @@ final class Plugin {
 		new \HeyFam\Core\Fams\Roles();
 		new \HeyFam\Core\Comments\Threading();
 		new \HeyFam\Core\PWA\Serve();
+		new \HeyFam\Core\PageBootstrap();
 		new \HeyFam\Core\Notifs\FanOut();
 
 		add_action( 'wp_initialize_site', static function ( \WP_Site $site ) {
@@ -43,6 +44,7 @@ final class Plugin {
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}
 		\HeyFam\Core\Notifs\Push::create_table();
+		\HeyFam\Core\PageBootstrap::ensure_pages();
 		flush_rewrite_rules();
 	}
 
