@@ -2,22 +2,26 @@ import { store } from '@wordpress/interactivity';
 
 const debounceTimers = new Map();
 
+const initialPushPermission = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
+
 const { state, actions } = store( 'heyfam/account', {
   state: {
     fams: [],
     loading: true,
     loadError: '',
-    pushPermission: typeof Notification !== 'undefined' ? Notification.permission : 'denied',
+    pushPermission: initialPushPermission,
     get logoutUrl() {
       return store( 'heyfam' ).state.logoutUrl || '/wp-login.php?action=logout';
     },
-    // Computed booleans for IAPI directives (which only support simple
-    // property paths or `!path`, not compound expressions like `!==`/`||`).
-    get pushNotEnabled() { return this.pushPermission !== 'default'; },
-    get pushNotGranted() { return this.pushPermission !== 'granted'; },
-    get pushNotDenied() { return this.pushPermission !== 'denied'; },
+    // IAPI directives only react to direct property access. Plain getters
+    // computed off other state aren't picked up at hydration, so we keep
+    // visibility flags as plain reactive props and recompute them whenever
+    // pushPermission, fams, or loading change.
+    pushNotEnabled:   initialPushPermission !== 'default',
+    pushNotGranted:   initialPushPermission !== 'granted',
+    pushNotDenied:    initialPushPermission !== 'denied',
     // Hide the empty-state line whenever the user has fams OR the page is still loading.
-    get hasFamsOrLoading() { return !! this.fams.length || !! this.loading; },
+    hasFamsOrLoading: true,
   },
   actions: {
     *togglePref( e ) {
@@ -39,6 +43,7 @@ const { state, actions } = store( 'heyfam/account', {
       try {
         const result = yield Notification.requestPermission();
         state.pushPermission = result;
+        recomputeVisibility();
         if ( result === 'granted' ) {
           // Reload to let push-subscribe.js register normally on its window.load handler.
           window.location.reload();
@@ -50,6 +55,16 @@ const { state, actions } = store( 'heyfam/account', {
   },
   callbacks: {
     *init() {
+      // SSR doesn't render the is-hidden class on these elements. IAPI's hydration
+      // skips re-applying class bindings whose initial DOM state matches the
+      // proxy. Toggle each flag through its opposite to trip the proxy's
+      // change-detection, then recomputeVisibility() re-asserts the right values.
+      state.pushNotEnabled   = ! state.pushNotEnabled;
+      state.pushNotGranted   = ! state.pushNotGranted;
+      state.pushNotDenied    = ! state.pushNotDenied;
+      state.hasFamsOrLoading = ! state.hasFamsOrLoading;
+      recomputeVisibility();
+
       const heyfam = store( 'heyfam' ).state;
       if ( ! heyfam.userId ) {
         // Not logged in; bounce to login.
@@ -80,13 +95,22 @@ const { state, actions } = store( 'heyfam/account', {
         } ) );
         state.fams = withPrefs;
         state.loading = false;
+        recomputeVisibility();
       } catch ( err ) {
         state.loading = false;
         state.loadError = 'Could not load your fams. Try refreshing.';
+        recomputeVisibility();
       }
     },
   },
 } );
+
+function recomputeVisibility() {
+  state.pushNotEnabled   = state.pushPermission !== 'default';
+  state.pushNotGranted   = state.pushPermission !== 'granted';
+  state.pushNotDenied    = state.pushPermission !== 'denied';
+  state.hasFamsOrLoading = !! state.fams.length || !! state.loading;
+}
 
 function defaultPrefs() {
   return {

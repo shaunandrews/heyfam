@@ -6,11 +6,12 @@ const { state, actions } = store( 'heyfam/signup', {
     phone: '', code: '', name: '', famName: '', famSlug: '',
     error: '', busy: false,
     title: 'Start a fam',
-    // Computed booleans for IAPI directives (which only support simple
-    // property paths or `!path`, not compound expressions like `!==`).
-    get phoneFormHidden() { return this.stage !== 'phone'; },
-    get codeFormHidden() { return this.stage !== 'code'; },
-    get profileFormHidden() { return this.stage !== 'profile'; },
+    // IAPI directives only react to direct property access. Plain getters
+    // computed off other state aren't picked up at hydration, so we keep
+    // visibility flags as plain reactive props and toggle them in setStage().
+    phoneFormHidden:   false,
+    codeFormHidden:    true,
+    profileFormHidden: true,
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },
@@ -25,7 +26,7 @@ const { state, actions } = store( 'heyfam/signup', {
       state.error = '';
     },
     updateFamSlug( e ) { state.famSlug = slugify( e.target.value ); state.error = ''; },
-    backToPhone() { state.stage = 'phone'; state.code = ''; state.error = ''; },
+    backToPhone() { setStage( 'phone' ); state.code = ''; state.error = ''; },
     *submitPhone( e ) {
       e.preventDefault();
       if ( state.busy ) return;
@@ -41,7 +42,7 @@ const { state, actions } = store( 'heyfam/signup', {
           body: JSON.stringify( { phone } ),
         } );
         if ( ! r.ok ) throw new Error( 'send-failed' );
-        state.stage = 'code';
+        setStage( 'code' );
       } catch ( err ) { state.error = 'Could not send code. Try again.'; }
       finally { state.busy = false; }
     },
@@ -51,7 +52,7 @@ const { state, actions } = store( 'heyfam/signup', {
       if ( state.code.length !== 6 ) { state.error = 'Enter the 6-digit code.'; return; }
       // We can't verify the code here (signup/verify needs display_name + creates the user).
       // So we just advance to the profile stage and combine code+profile in the final POST.
-      state.stage = 'profile';
+      setStage( 'profile' );
     },
     *submitProfile( e ) {
       e.preventDefault();
@@ -73,7 +74,7 @@ const { state, actions } = store( 'heyfam/signup', {
         if ( ! v.ok ) {
           const body = yield v.json().catch( () => ( {} ) );
           state.error = body.error === 'bad_code' ? 'Wrong code. Try again.' : 'Could not verify. Try again.';
-          if ( body.error === 'bad_code' ) state.stage = 'code';
+          if ( body.error === 'bad_code' ) setStage( 'code' );
           state.busy = false;
           return;
         }
@@ -98,10 +99,24 @@ const { state, actions } = store( 'heyfam/signup', {
   },
   callbacks: {
     init() {
-      // Pre-populate slug as user types fam name.
+      // SSR doesn't render the is-hidden class on these forms. IAPI's hydration
+      // skips re-applying class bindings whose initial DOM state matches the
+      // proxy. Toggle each flag through its opposite to trip the proxy's
+      // change-detection, then setStage() re-asserts the right values.
+      state.phoneFormHidden   = ! state.phoneFormHidden;
+      state.codeFormHidden    = ! state.codeFormHidden;
+      state.profileFormHidden = ! state.profileFormHidden;
+      setStage( state.stage );
     },
   },
 } );
+
+function setStage( next ) {
+  state.stage             = next;
+  state.phoneFormHidden   = next !== 'phone';
+  state.codeFormHidden    = next !== 'code';
+  state.profileFormHidden = next !== 'profile';
+}
 
 function normalizePhone( raw ) {
   const digits = ( raw || '' ).replace( /[^0-9+]/g, '' );

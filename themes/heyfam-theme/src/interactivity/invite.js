@@ -10,18 +10,19 @@ const { state, actions } = store( 'heyfam/invite', {
     famName: '', inviter: '', phoneHint: '',
     previewLoaded: false, previewError: '',
     error: '', busy: false,
-    // Computed booleans for IAPI directives (which only support simple
-    // property paths or `!path`, not compound expressions like `!==`/`||`).
-    // Phone form also stays hidden when there's a preview error so a broken
-    // invite link doesn't show a usable form.
-    get phoneFormHidden() { return this.stage !== 'phone' || !! this.previewError; },
-    get codeFormHidden() { return this.stage !== 'code'; },
+    // IAPI directives only react to direct property access. Plain getters
+    // computed off other state aren't picked up at hydration, so we keep
+    // visibility flags as plain reactive props and recompute them whenever
+    // the inputs change. phoneFormHidden depends on both stage and
+    // previewError — a broken invite link should keep the form hidden.
+    phoneFormHidden: false,
+    codeFormHidden:  true,
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },
     updateCode( e ) { state.smsCode = e.target.value.replace( /\D/g, '' ); state.error = ''; },
     updateName( e ) { state.name = e.target.value; state.error = ''; },
-    backToPhone() { state.stage = 'phone'; state.smsCode = ''; state.error = ''; },
+    backToPhone() { setStage( 'phone' ); state.smsCode = ''; state.error = ''; },
     *submitPhone( e ) {
       e.preventDefault();
       if ( state.busy ) return;
@@ -37,7 +38,7 @@ const { state, actions } = store( 'heyfam/invite', {
           body: JSON.stringify( { phone } ),
         } );
         if ( ! r.ok ) throw new Error( 'send-failed' );
-        state.stage = 'code';
+        setStage( 'code' );
       } catch ( err ) { state.error = 'Could not send code. Try again.'; }
       finally { state.busy = false; }
     },
@@ -76,11 +77,19 @@ const { state, actions } = store( 'heyfam/invite', {
   },
   callbacks: {
     *init() {
+      // SSR doesn't render the is-hidden class on these forms. IAPI's hydration
+      // skips re-applying class bindings whose initial DOM state matches the
+      // proxy. Toggle each flag through its opposite to trip the proxy's
+      // change-detection, then recomputeVisibility() re-asserts the right values.
+      state.phoneFormHidden = ! state.phoneFormHidden;
+      state.codeFormHidden  = ! state.codeFormHidden;
+      recomputeVisibility();
+
       // Pull invite code from the URL.
       const params = new URLSearchParams( window.location.search );
       const code = params.get( 'heyfam_invite_code' ) || '';
       if ( ! code ) {
-        state.previewError = 'No invite code in URL. Check the link your inviter sent you.';
+        setPreviewError( 'No invite code in URL. Check the link your inviter sent you.' );
         return;
       }
       state.code = code;
@@ -93,9 +102,9 @@ const { state, actions } = store( 'heyfam/invite', {
         );
         const body = yield r.json().catch( () => ( {} ) );
         if ( ! r.ok ) {
-          if ( body.error === 'used' )    state.previewError = 'This invite has already been used.';
-          else if ( body.error === 'expired' ) state.previewError = 'This invite has expired.';
-          else                                 state.previewError = 'This invite link is not valid.';
+          if ( body.error === 'used' )    setPreviewError( 'This invite has already been used.' );
+          else if ( body.error === 'expired' ) setPreviewError( 'This invite has expired.' );
+          else                                 setPreviewError( 'This invite link is not valid.' );
           return;
         }
         state.famName       = body.fam_name;
@@ -103,11 +112,26 @@ const { state, actions } = store( 'heyfam/invite', {
         state.phoneHint     = body.phone_hint;
         state.previewLoaded = true;
       } catch ( err ) {
-        state.previewError = 'Could not load invite. Check your connection.';
+        setPreviewError( 'Could not load invite. Check your connection.' );
       }
     },
   },
 } );
+
+function recomputeVisibility() {
+  state.phoneFormHidden = state.stage !== 'phone' || !! state.previewError;
+  state.codeFormHidden  = state.stage !== 'code';
+}
+
+function setStage( next ) {
+  state.stage = next;
+  recomputeVisibility();
+}
+
+function setPreviewError( err ) {
+  state.previewError = err;
+  recomputeVisibility();
+}
 
 function normalizePhone( raw ) {
   const digits = ( raw || '' ).replace( /[^0-9+]/g, '' );

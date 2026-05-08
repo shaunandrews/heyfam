@@ -5,15 +5,16 @@ const { state, actions } = store( 'heyfam/login', {
     stage: 'phone',
     phone: '', code: '',
     error: '', busy: false,
-    // Computed booleans for IAPI directives (which only support simple
-    // property paths or `!path`, not compound expressions like `!==`).
-    get phoneFormHidden() { return this.stage !== 'phone'; },
-    get codeFormHidden() { return this.stage !== 'code'; },
+    // IAPI directives only react to direct property access. Plain getters
+    // computed off other state aren't picked up at hydration, so we keep
+    // visibility flags as plain reactive props and toggle them in setStage().
+    phoneFormHidden: false,
+    codeFormHidden:  true,
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },
     updateCode( e ) { state.code = e.target.value.replace( /\D/g, '' ); state.error = ''; },
-    backToPhone() { state.stage = 'phone'; state.code = ''; state.error = ''; },
+    backToPhone() { setStage( 'phone' ); state.code = ''; state.error = ''; },
     *submitPhone( e ) {
       e.preventDefault();
       if ( state.busy ) return;
@@ -29,7 +30,7 @@ const { state, actions } = store( 'heyfam/login', {
           body: JSON.stringify( { phone } ),
         } );
         if ( ! r.ok ) throw new Error( 'send-failed' );
-        state.stage = 'code';
+        setStage( 'code' );
       } catch ( err ) { state.error = 'Could not send code. Try again.'; }
       finally { state.busy = false; }
     },
@@ -70,9 +71,23 @@ const { state, actions } = store( 'heyfam/login', {
     },
   },
   callbacks: {
-    init() {},
+    init() {
+      // SSR doesn't render the is-hidden class on these forms. IAPI's hydration
+      // skips re-applying class bindings whose initial DOM state matches the
+      // proxy. Toggle each flag through its opposite to trip the proxy's
+      // change-detection, then setStage() re-asserts the right values.
+      state.phoneFormHidden = ! state.phoneFormHidden;
+      state.codeFormHidden  = ! state.codeFormHidden;
+      setStage( state.stage );
+    },
   },
 } );
+
+function setStage( next ) {
+  state.stage           = next;
+  state.phoneFormHidden = next !== 'phone';
+  state.codeFormHidden  = next !== 'code';
+}
 
 function normalizePhone( raw ) {
   const digits = ( raw || '' ).replace( /[^0-9+]/g, '' );
