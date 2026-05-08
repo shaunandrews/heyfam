@@ -23,6 +23,7 @@ final class Plugin {
 		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}
+		\HeyFam\Core\Notifs\Push::create_table();
 		flush_rewrite_rules();
 	}
 

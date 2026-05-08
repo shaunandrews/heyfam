@@ -133,6 +133,24 @@ final class Routes {
             'args'                => [ 'since' => [ 'required' => false, 'type' => 'string' ] ],
             'callback'            => [ $this, 'single_post' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/push/subscribe', [
+            'methods'             => 'POST',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'args'                => [
+                'endpoint'        => [ 'required' => true, 'type' => 'string' ],
+                'p256dh'          => [ 'required' => true, 'type' => 'string' ],
+                'auth'            => [ 'required' => true, 'type' => 'string' ],
+                'expiration_time' => [ 'required' => false, 'type' => 'integer' ],
+            ],
+            'callback'            => [ $this, 'push_subscribe' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/push/vapid', [
+            'methods'             => 'GET',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => static fn() => new \WP_REST_Response( [ 'public_key' => getenv( 'VAPID_PUBLIC_KEY' ) ] ),
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -417,6 +435,18 @@ final class Routes {
 
         if ( ! $payload ) return new \WP_REST_Response( [ 'error' => 'not_found' ], 404 );
         return new \WP_REST_Response( [ 'ok' => true ] + $payload + [ 'now' => gmdate( 'c' ) ], 200 );
+    }
+
+    public function push_subscribe( \WP_REST_Request $request ): \WP_REST_Response {
+        \HeyFam\Core\Notifs\Push::upsert(
+            get_current_user_id(),
+            (string) $request->get_param( 'endpoint' ),
+            (string) $request->get_param( 'p256dh' ),
+            (string) $request->get_param( 'auth' ),
+            $request->get_param( 'expiration_time' ) ? (int) $request->get_param( 'expiration_time' ) : null,
+            $request->get_header( 'user_agent' ) ?: null
+        );
+        return new \WP_REST_Response( [ 'ok' => true ], 200 );
     }
 
     private static function serialize_post( \WP_Post $p ): array {
