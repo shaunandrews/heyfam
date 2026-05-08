@@ -326,6 +326,14 @@ final class Routes {
             return new \WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
         }
 
+        $ip = $request->get_header( 'x-forwarded-for' ) ?: ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
+        if ( ! \HeyFam\Core\Auth\RateLimit::hit( 'invite_accept_ip:' . $ip,   3600, 30 ) ) {
+            return new \WP_REST_Response( [ 'error' => 'rate_limited' ], 429 );
+        }
+        if ( ! \HeyFam\Core\Auth\RateLimit::hit( 'invite_accept_code:' . md5( $code ), 600, 5 ) ) {
+            return new \WP_REST_Response( [ 'error' => 'rate_limited' ], 429 );
+        }
+
         if ( \HeyFam\Core\Auth\RateLimit::lockout_check( $phone ) ) {
             return new \WP_REST_Response( [ 'error' => 'locked_out' ], 429 );
         }
