@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+  <php>
+    <env name="HEYFAM_INVITE_HMAC_SECRET" value="test-secret-for-phpunit"/>
+  </php>
+  <testsuites>
+    <testsuite name="heyfam">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
