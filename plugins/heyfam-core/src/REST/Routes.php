@@ -151,6 +151,13 @@ final class Routes {
             'permission_callback' => static fn() => is_user_logged_in(),
             'callback'            => static fn() => new \WP_REST_Response( [ 'public_key' => getenv( 'VAPID_PUBLIC_KEY' ) ] ),
         ] );
+
+        register_rest_route( 'heyfam/v1', '/email/unsub', [
+            'methods'             => [ 'POST', 'GET' ],
+            'permission_callback' => '__return_true',
+            'args'                => [ 'token' => [ 'required' => true, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'email_unsub' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -446,6 +453,13 @@ final class Routes {
             $request->get_param( 'expiration_time' ) ? (int) $request->get_param( 'expiration_time' ) : null,
             $request->get_header( 'user_agent' ) ?: null
         );
+        return new \WP_REST_Response( [ 'ok' => true ], 200 );
+    }
+
+    public function email_unsub( \WP_REST_Request $request ): \WP_REST_Response {
+        $uid = \HeyFam\Core\Notifs\Email::user_id_from_token( (string) $request->get_param( 'token' ) );
+        if ( ! $uid ) return new \WP_REST_Response( [ 'error' => 'invalid' ], 400 );
+        \HeyFam\Core\Notifs\Email::set_unsubscribed( $uid, true );
         return new \WP_REST_Response( [ 'ok' => true ], 200 );
     }
 
