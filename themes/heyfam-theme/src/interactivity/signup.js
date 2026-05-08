@@ -65,32 +65,39 @@ const { state, actions } = store( 'heyfam/signup', {
       state.busy = true;
       try {
         const heyfam = store( 'heyfam' ).state;
-        // Verify code AND create the user.
+        // signup/verify creates the user, sets the auth cookie, AND creates the
+        // fam in one shot — combining avoids the WP REST nonce vs new-session
+        // race that would otherwise reject the follow-up /fams call.
         const v = yield fetch( `${heyfam.apiBase}/signup/verify`, {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify( { phone: state.phone, code: state.code, display_name: state.name } ),
+          body: JSON.stringify( {
+            phone:        state.phone,
+            code:         state.code,
+            display_name: state.name,
+            fam_name:     state.famName,
+            fam_slug:     state.famSlug,
+          } ),
         } );
-        if ( ! v.ok ) {
-          const body = yield v.json().catch( () => ( {} ) );
-          state.error = body.error === 'bad_code' ? 'Wrong code. Try again.' : 'Could not verify. Try again.';
-          if ( body.error === 'bad_code' ) setStage( 'code' );
+        const vbody = yield v.json().catch( () => ( {} ) );
+        if ( ! v.ok || ! vbody.ok ) {
+          if ( vbody.error === 'bad_code' ) {
+            state.error = 'Wrong code. Try again.';
+            setStage( 'code' );
+          } else if ( vbody.error === 'slug_taken' || vbody.error === 'invalid_slug' || vbody.error === 'reserved_slug' ) {
+            state.error = vbody.message || 'That fam URL is unavailable.';
+          } else {
+            state.error = vbody.message || 'Could not verify. Try again.';
+          }
           state.busy = false;
           return;
         }
-        // Now create the fam. We're authenticated thanks to set_auth_cookie on signup_verify.
-        const f = yield fetch( `${heyfam.apiBase}/fams`, {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
-          body: JSON.stringify( { name: state.famName, slug: state.famSlug } ),
-        } );
-        const fbody = yield f.json();
-        if ( ! f.ok ) {
-          state.error = fbody.message || 'Could not create fam.';
-          state.busy = false;
+        if ( vbody.fam_url ) {
+          window.location.href = vbody.fam_url;
           return;
         }
-        window.location.href = fbody.url;
+        // No fam created (shouldn't happen in this flow). Fall back to /account.
+        window.location.href = '/account';
       } catch ( err ) {
         state.error = 'Network error. Try again.';
         state.busy = false;

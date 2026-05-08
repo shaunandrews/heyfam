@@ -32,7 +32,7 @@ const { state, actions } = store( 'heyfam/composer', {
         state.photo = null;
         state.photoLabel = 'Add photo';
         // Trigger feed refresh if it's listening.
-        store( 'heyfam/feed' ).callbacks.refresh( heyfam, true );
+        store( 'heyfam/feed' ).callbacks.refresh( heyfam );
       } catch ( err ) {
         alert( 'Could not post. Try again.' );
       } finally {

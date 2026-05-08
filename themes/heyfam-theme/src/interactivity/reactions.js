@@ -29,5 +29,5 @@ function* apply( target_type, target_id, emoji ) {
     headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
     body: JSON.stringify( { target_type, target_id, emoji } ),
   } );
-  store( 'heyfam/feed' ).callbacks.refresh( heyfam, true );
+  store( 'heyfam/feed' ).callbacks.refresh( heyfam );
 }

@@ -52,6 +52,9 @@ const { state, actions } = store( 'heyfam/login', {
           state.busy = false;
           return;
         }
+        // login/verify rotates the nonce (now authenticated as the user).
+        const vbody = yield v.json().catch( () => ( {} ) );
+        if ( vbody && vbody.nonce ) heyfam.nonce = vbody.nonce;
         // Authenticated. Find the user's first fam, fall back to /account.
         const f = yield fetch( `${heyfam.apiBase}/me/fams`, {
           method: 'GET', credentials: 'include',

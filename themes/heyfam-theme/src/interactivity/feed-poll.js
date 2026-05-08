@@ -10,21 +10,26 @@ const { state } = store( 'heyfam/feed', {
   callbacks: {
     *bootstrap() {
       const heyfam = store( 'heyfam' ).state;
-      yield this.refresh( heyfam, true );
-      setInterval( () => this.refresh( heyfam, false ), 10000 );
+      // Defer to a microtask — at the moment data-wp-init fires, the
+      // per-iteration `data-wp-each` template hasn't fully attached, so a
+      // synchronous state mutation can be lost. Setting state via setTimeout(0)
+      // ensures the binding is live before we mutate.
+      setTimeout( () => {
+        store( 'heyfam/feed' ).callbacks.refresh( heyfam );
+      }, 0 );
+      setInterval( () => store( 'heyfam/feed' ).callbacks.refresh( heyfam ), 10000 );
     },
-    *refresh( heyfam, reset ) {
+    *refresh( heyfam ) {
       if ( ! heyfam.famSlug ) return;
-      const params = new URLSearchParams();
-      if ( ! reset && state.lastFetch ) params.set( 'since', state.lastFetch );
-      const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/feed?${params}`, {
+      // Always fetch the full feed — `since` would only return new POSTS, missing
+      // updated reactions/comment-counts on existing posts. 50-post cap is fine.
+      const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/feed`, {
         credentials: 'include',
         headers: { 'X-WP-Nonce': heyfam.nonce },
       } );
       if ( ! r.ok ) return;
       const body = yield r.json();
-      const merged = reset ? body.posts : mergePosts( state.posts, body.posts );
-      state.posts = merged.map( ( p ) => ( {
+      state.posts = ( body.posts || [] ).map( ( p ) => ( {
         ...p,
         reactionEntries: Object.entries( p.reactions || {} ),
       } ) );
@@ -33,10 +38,3 @@ const { state } = store( 'heyfam/feed', {
     },
   },
 } );
-
-function mergePosts( existing, incoming ) {
-  if ( ! incoming?.length ) return existing;
-  const ids = new Set( existing.map( ( p ) => p.id ) );
-  const fresh = incoming.filter( ( p ) => ! ids.has( p.id ) );
-  return [ ...fresh, ...existing ].sort( ( a, b ) => b.created_at.localeCompare( a.created_at ) );
-}
