@@ -158,6 +158,12 @@ final class Routes {
             'args'                => [ 'token' => [ 'required' => true, 'type' => 'string' ] ],
             'callback'            => [ $this, 'email_unsub' ],
         ] );
+
+        register_rest_route( 'heyfam/v1', '/twilio/inbound', [
+            'methods'             => 'POST',
+            'permission_callback' => [ $this, 'verify_twilio_signature' ],
+            'callback'            => [ $this, 'twilio_inbound' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -461,6 +467,46 @@ final class Routes {
         if ( ! $uid ) return new \WP_REST_Response( [ 'error' => 'invalid' ], 400 );
         \HeyFam\Core\Notifs\Email::set_unsubscribed( $uid, true );
         return new \WP_REST_Response( [ 'ok' => true ], 200 );
+    }
+
+    public function verify_twilio_signature( \WP_REST_Request $request ): bool {
+        $token = getenv( 'TWILIO_AUTH_TOKEN' );
+        if ( ! $token ) return false;
+
+        $sig    = $request->get_header( 'x-twilio-signature' );
+        $url    = home_url( $_SERVER['REQUEST_URI'] );
+        $params = $_POST; // Twilio sends form-encoded
+        ksort( $params );
+        $data = $url;
+        foreach ( $params as $k => $v ) $data .= $k . $v;
+        $expected = base64_encode( hash_hmac( 'sha1', $data, $token, true ) );
+        return hash_equals( $expected, (string) $sig );
+    }
+
+    public function twilio_inbound( \WP_REST_Request $request ): \WP_REST_Response {
+        $from = (string) ( $_POST['From'] ?? '' );
+        $body = strtoupper( trim( (string) ( $_POST['Body'] ?? '' ) ) );
+        if ( ! $from ) return new \WP_REST_Response( '', 200 );
+
+        $reply = '';
+        if ( in_array( $body, [ 'STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT' ], true ) ) {
+            \HeyFam\Core\Notifs\SMS::set_opted_out( $from, true );
+            $reply = ''; // Twilio handles the auto-confirmation.
+        } elseif ( in_array( $body, [ 'HELP', 'INFO' ], true ) ) {
+            $reply = 'HeyFam: family group messages. Reply STOP to unsubscribe. Support: support@heyfam.blog';
+        } elseif ( in_array( $body, [ 'START', 'YES', 'UNSTOP' ], true ) ) {
+            \HeyFam\Core\Notifs\SMS::set_opted_out( $from, false );
+            $reply = 'HeyFam: you are re-subscribed. Reply STOP to opt out again.';
+        }
+
+        header( 'Content-Type: text/xml' );
+        $xml = '<?xml version="1.0" encoding="UTF-8"?><Response>';
+        if ( $reply ) {
+            $xml .= '<Message>' . esc_html( $reply ) . '</Message>';
+        }
+        $xml .= '</Response>';
+        echo $xml;
+        exit;
     }
 
     private static function serialize_post( \WP_Post $p ): array {
