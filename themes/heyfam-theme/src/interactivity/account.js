@@ -11,6 +11,13 @@ const { state, actions } = store( 'heyfam/account', {
     get logoutUrl() {
       return store( 'heyfam' ).state.logoutUrl || '/wp-login.php?action=logout';
     },
+    // Computed booleans for IAPI directives (which only support simple
+    // property paths or `!path`, not compound expressions like `!==`/`||`).
+    get pushNotEnabled() { return this.pushPermission !== 'default'; },
+    get pushNotGranted() { return this.pushPermission !== 'granted'; },
+    get pushNotDenied() { return this.pushPermission !== 'denied'; },
+    // Hide the empty-state line whenever the user has fams OR the page is still loading.
+    get hasFamsOrLoading() { return !! this.fams.length || !! this.loading; },
   },
   actions: {
     *togglePref( e ) {

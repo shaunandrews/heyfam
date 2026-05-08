@@ -11,13 +11,13 @@
     </p>
     <p class="error" data-wp-class--is-hidden="!state.previewError" data-wp-text="state.previewError"></p>
 
-    <form data-wp-class--is-hidden="state.stage !== 'phone' || state.previewError" data-wp-on--submit="actions.submitPhone">
+    <form data-wp-class--is-hidden="state.phoneFormHidden" data-wp-on--submit="actions.submitPhone">
       <label>Your phone <input type="tel" data-wp-on--input="actions.updatePhone" data-wp-bind--value="state.phone" placeholder="+15555550100" required /></label>
       <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" data-wp-bind--disabled="state.busy">Send code</button>
     </form>
 
-    <form data-wp-class--is-hidden="state.stage !== 'code'" data-wp-on--submit="actions.submitCode">
+    <form data-wp-class--is-hidden="state.codeFormHidden" data-wp-on--submit="actions.submitCode">
       <p>We sent a 6-digit code to <strong data-wp-text="state.phone"></strong>.</p>
       <label>Code <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" data-wp-on--input="actions.updateCode" data-wp-bind--value="state.code" required /></label>
       <label>Your name <span class="prefix">(new members only)</span><input type="text" data-wp-on--input="actions.updateName" data-wp-bind--value="state.name" maxlength="60" /></label>

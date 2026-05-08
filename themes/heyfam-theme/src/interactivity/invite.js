@@ -10,6 +10,12 @@ const { state, actions } = store( 'heyfam/invite', {
     famName: '', inviter: '', phoneHint: '',
     previewLoaded: false, previewError: '',
     error: '', busy: false,
+    // Computed booleans for IAPI directives (which only support simple
+    // property paths or `!path`, not compound expressions like `!==`/`||`).
+    // Phone form also stays hidden when there's a preview error so a broken
+    // invite link doesn't show a usable form.
+    get phoneFormHidden() { return this.stage !== 'phone' || !! this.previewError; },
+    get codeFormHidden() { return this.stage !== 'code'; },
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },

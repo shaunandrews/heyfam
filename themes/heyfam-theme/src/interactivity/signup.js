@@ -6,6 +6,11 @@ const { state, actions } = store( 'heyfam/signup', {
     phone: '', code: '', name: '', famName: '', famSlug: '',
     error: '', busy: false,
     title: 'Start a fam',
+    // Computed booleans for IAPI directives (which only support simple
+    // property paths or `!path`, not compound expressions like `!==`).
+    get phoneFormHidden() { return this.stage !== 'phone'; },
+    get codeFormHidden() { return this.stage !== 'code'; },
+    get profileFormHidden() { return this.stage !== 'profile'; },
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },
