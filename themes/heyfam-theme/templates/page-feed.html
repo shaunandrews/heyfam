@@ -9,7 +9,9 @@
            data-wp-interactive="heyfam/feed"
            data-wp-init="callbacks.bootstrap">
     <template data-wp-each="state.posts">
-      <article class="heyfam-post-card" data-wp-key="context.item.id">
+      <article class="heyfam-post-card"
+               data-wp-key="context.item.id"
+               data-wp-bind--data-id="context.item.id">
         <header class="heyfam-post-card__header">
           <strong data-wp-text="context.item.author.name"></strong>
           <time data-wp-bind--datetime="context.item.created_at" data-wp-text="context.item.created_at"></time>
@@ -19,9 +21,7 @@
              data-wp-bind--src="context.item.photo_url"
              data-wp-bind--hidden="!context.item.photo_url" alt="" />
         <footer class="heyfam-post-card__reactions"
-                data-wp-interactive="heyfam/reactions"
-                data-wp-context='{"target_type":"post","target_id":0}'
-                data-wp-init="callbacks.captureTarget">
+                data-wp-interactive="heyfam/reactions">
           <ul class="heyfam-reactions">
             <template data-wp-each="context.item.reactionEntries">
               <li>
