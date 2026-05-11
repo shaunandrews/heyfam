@@ -664,6 +664,7 @@ final class Routes {
         ];
     }
 
+    /** @internal Public only so the integration test can call it directly. */
     public static function validate_comment_parent( int $parent_id, int $post_id ): ?string {
         if ( $parent_id <= 0 ) {
             return null;
