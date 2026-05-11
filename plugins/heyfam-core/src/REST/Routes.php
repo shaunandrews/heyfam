@@ -92,7 +92,10 @@ final class Routes {
             'methods'             => 'POST',
             'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_post_to_fam' ),
             'args'                => [
-                'body' => [ 'required' => false, 'type' => 'string' ],
+                'body'           => [ 'required' => false, 'type' => 'string' ],
+                'poll_options'   => [ 'required' => false, 'type' => 'array' ],
+                'poll_closes_at' => [ 'required' => false, 'type' => 'string' ],
+                'poll_anon'      => [ 'required' => false, 'type' => 'boolean' ],
             ],
             'callback'            => [ $this, 'create_post' ],
         ] );
@@ -539,8 +542,18 @@ final class Routes {
         // Cap to a sane limit so a thumb fat-finger doesn't upload an album.
         $slots = array_slice( $slots, 0, 10 );
 
-        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $body, $slots ) {
-            return \HeyFam\Core\Posts\Composer::create( get_current_user_id(), $body, $slots );
+        $poll = null;
+        $opts = $request->get_param( 'poll_options' );
+        if ( is_array( $opts ) && count( $opts ) >= 2 ) {
+            $poll = [
+                'options'   => $opts,
+                'closes_at' => (string) ( $request->get_param( 'poll_closes_at' ) ?? '' ),
+                'anon'      => (bool) $request->get_param( 'poll_anon' ),
+            ];
+        }
+
+        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $body, $slots, $poll ) {
+            return \HeyFam\Core\Posts\Composer::create( get_current_user_id(), $body, $slots, $poll );
         } );
         if ( is_wp_error( $result ) ) {
             return new \WP_REST_Response(
@@ -833,6 +846,53 @@ final class Routes {
             'comment_count'   => (int) $p->comment_count,
             'permalink'       => get_permalink( $p ),
             'comments'        => self::decorated_comments_for_post( (int) $p->ID ),
+            'poll'            => self::serialize_poll( (int) $p->ID ),
+        ];
+    }
+
+    /**
+     * Returns the poll decoration for a post, or `null` for non-poll posts.
+     *
+     * Includes pre-baked `bar_style` (`width:N%;`) and `is_my_vote` per option
+     * so the IAPI template can render result bars + the "my vote" highlight
+     * without computing percents in JS. SSR'd via `wp_interactivity_state` so
+     * the chosen option is highlighted on first paint.
+     */
+    private static function serialize_poll( int $post_id ): ?array {
+        $options = \HeyFam\Core\Polls\Manager::options_for( $post_id );
+        if ( ! $options ) return null;
+
+        $count   = count( $options );
+        $counts  = \HeyFam\Core\Polls\Manager::counts_for( $post_id, $count );
+        $total   = array_sum( $counts );
+        $closes  = (string) get_post_meta( $post_id, 'heyfam_poll_closes_at', true );
+        $anon    = \HeyFam\Core\Polls\Manager::is_anon( $post_id );
+        $closed  = \HeyFam\Core\Polls\Manager::is_closed( $post_id );
+        $my_vote = \HeyFam\Core\Polls\Manager::my_vote( $post_id, get_current_user_id() );
+
+        $option_rows = [];
+        foreach ( $options as $i => $label ) {
+            $n       = (int) $counts[ $i ];
+            $percent = $total > 0 ? (int) round( ( $n / $total ) * 100 ) : 0;
+            $option_rows[] = [
+                'index'      => $i,
+                'label'      => $label,
+                'count'      => $n,
+                'percent'    => $percent,
+                'is_my_vote' => $i === $my_vote,
+                'bar_style'  => sprintf( 'width:%d%%;', $percent ),
+            ];
+        }
+
+        return [
+            'options'     => $option_rows,
+            'closes_at'   => $closes ? mysql2date( 'c', $closes, false ) : null,
+            'closed'      => $closed,
+            'anon'        => $anon,
+            'total_votes' => $total,
+            'my_vote'     => $my_vote,
+            'has_voted'   => $my_vote >= 0,
+            'voters'      => $anon ? [] : \HeyFam\Core\Polls\Manager::voters_for( $post_id ),
         ];
     }
 

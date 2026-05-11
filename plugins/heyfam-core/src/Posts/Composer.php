@@ -3,20 +3,37 @@ namespace HeyFam\Core\Posts;
 
 final class Composer {
 	/**
-	 * Create a post and attach zero or more uploaded photos.
+	 * Create a post and attach zero or more uploaded photos, or a poll.
 	 *
 	 * `$photos` accepts one of three shapes for backwards compatibility:
 	 *  - `null` or `[]`            — no photos.
 	 *  - `[ 'name'=>..., 'tmp_name'=>..., ... ]` — single $_FILES slot (legacy).
 	 *  - `[ [ 'name'=>..., ... ], [ 'name'=>..., ... ] ]` — list of slots (new).
 	 *
+	 * `$poll` is optional. When present, the resulting post is a poll: the
+	 * body is the question, and three post_meta keys are written
+	 * (`heyfam_poll_options`, `heyfam_poll_closes_at`, `heyfam_poll_anon`).
+	 * Shape: `[ 'options' => string[], 'closes_at' => ?string, 'anon' => bool ]`.
+	 *
 	 * @return array{ post_id: int, attachment_ids: int[] }|\WP_Error
 	 */
-	public static function create( int $author_id, string $body, $photos = null ): array|\WP_Error {
+	public static function create( int $author_id, string $body, $photos = null, ?array $poll = null ): array|\WP_Error {
 		$body  = trim( $body );
 		$slots = self::normalize_slots( $photos );
 
-		if ( $body === '' && empty( $slots ) ) {
+		$is_poll = is_array( $poll );
+		if ( $is_poll ) {
+			$opts = self::sanitize_options( $poll['options'] ?? [] );
+			if ( count( $opts ) < 2 ) {
+				return new \WP_Error( 'too_few_options', 'A poll needs at least two options.' );
+			}
+			if ( count( $opts ) > 6 ) {
+				return new \WP_Error( 'too_many_options', 'A poll can have up to 6 options.' );
+			}
+			if ( $body === '' ) {
+				return new \WP_Error( 'no_question', 'Polls need a question.' );
+			}
+		} elseif ( $body === '' && empty( $slots ) ) {
 			return new \WP_Error( 'empty_post', 'Add some text or a photo.' );
 		}
 
@@ -28,8 +45,27 @@ final class Composer {
 		], true );
 		if ( is_wp_error( $post_id ) ) return $post_id;
 
+		if ( $is_poll ) {
+			update_post_meta( (int) $post_id, 'heyfam_poll_options', wp_json_encode( $opts ) );
+
+			$closes_at    = isset( $poll['closes_at'] ) ? (string) $poll['closes_at'] : '';
+			$closes_mysql = '';
+			if ( $closes_at !== '' ) {
+				$ts = strtotime( $closes_at );
+				if ( $ts && $ts > time() ) {
+					$closes_mysql = gmdate( 'Y-m-d H:i:s', $ts );
+				}
+			}
+			update_post_meta( (int) $post_id, 'heyfam_poll_closes_at', $closes_mysql );
+
+			$anon = ! empty( $poll['anon'] );
+			update_post_meta( (int) $post_id, 'heyfam_poll_anon', $anon ? '1' : '0' );
+		}
+
 		$attachment_ids = [];
-		if ( ! empty( $slots ) ) {
+		// Polls don't attach photos — the composer hides the photo picker in
+		// poll mode, but defensively skip uploads if any slot somehow arrives.
+		if ( ! $is_poll && ! empty( $slots ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 			require_once ABSPATH . 'wp-admin/includes/media.php';
 			require_once ABSPATH . 'wp-admin/includes/image.php';
@@ -58,6 +94,18 @@ final class Composer {
 			'post_id'        => (int) $post_id,
 			'attachment_ids' => $attachment_ids,
 		];
+	}
+
+	/** Strip + cap a list of option strings; drop empties; max 80 chars each. */
+	private static function sanitize_options( array $raw ): array {
+		$out = [];
+		foreach ( $raw as $o ) {
+			$s = trim( wp_strip_all_tags( (string) $o ) );
+			if ( $s === '' ) continue;
+			if ( mb_strlen( $s ) > 80 ) $s = mb_substr( $s, 0, 80 );
+			$out[] = $s;
+		}
+		return array_values( $out );
 	}
 
 	/** Coerces the three input shapes into a list of $_FILES-style slots. */
