@@ -4,35 +4,46 @@
 <div class="wp-block-group heyfam-single"
      data-wp-interactive="heyfam/single"
      data-wp-init="callbacks.bootstrap">
+
   <!-- wp:html -->
-  <article class="heyfam-post-card" data-wp-bind--data-post-id="state.post.id">
-    <header><strong data-wp-text="state.post.author.name"></strong></header>
+  <article class="heyfam-post-card"
+           data-wp-bind--data-post-id="state.post.id"
+           data-wp-bind--data-id="state.post.id"
+           data-target-type="post">
+    <header class="heyfam-post-card__header">
+      <strong data-wp-text="state.post.author.name"></strong>
+      <time data-wp-bind--datetime="state.post.created_at" data-wp-text="state.post.created_at"></time>
+    </header>
     <div class="heyfam-post-card__body" data-wp-text="state.post.body"></div>
     <img class="heyfam-post-card__photo"
          data-wp-bind--src="state.post.photo_url"
          data-wp-class--is-hidden="!state.post.photo_url" alt="" />
+    <footer class="heyfam-post-card__reactions"
+            data-wp-interactive="heyfam/reactions">
+      <ul class="heyfam-reactions">
+        <template data-wp-each--entry="state.post.reactionEntries">
+          <li>
+            <button data-wp-on--click="actions.toggle">
+              <span data-wp-text="context.entry.0"></span>
+              <span data-wp-text="context.entry.1"></span>
+            </button>
+          </li>
+        </template>
+        <li><button data-wp-on--click="actions.openPicker">+</button></li>
+      </ul>
+    </footer>
   </article>
 
   <section class="heyfam-comments">
-    <template data-wp-each="state.comments">
-      <div class="heyfam-comment" data-wp-key="context.item.id">
-        <strong data-wp-text="context.item.author.name"></strong>
-        <p data-wp-text="context.item.body"></p>
-        <button data-wp-on--click="actions.reply"
-                data-wp-context='{"parent_id":0}'>Reply</button>
-        <template data-wp-each="context.item.children">
-          <div class="heyfam-comment heyfam-comment--child" data-wp-key="context.item.id">
-            <strong data-wp-text="context.item.author.name"></strong>
-            <p data-wp-text="context.item.body"></p>
-          </div>
-        </template>
-      </div>
-    </template>
+    <!-- wp:template-part {"slug":"comment-thread"} /-->
 
-    <form class="heyfam-comment-form"
+    <form class="heyfam-comment-form heyfam-comment-form--root"
+          data-wp-interactive="heyfam/comments"
+          data-wp-class--is-hidden="state.topLevelHidden"
           data-wp-on--submit="actions.submit">
       <textarea data-wp-on--input="actions.updateBody"
-                data-wp-bind--value="state.body" placeholder="Reply…" rows="2"></textarea>
+                data-wp-bind--value="state.body"
+                placeholder="Add a comment…" rows="2"></textarea>
       <button type="submit" data-wp-bind--disabled="state.submitting">Send</button>
     </form>
   </section>
