@@ -12,3 +12,24 @@ export function normalizePhone( raw ) {
   if ( digits.length < 8 || digits.length > 16 ) return null;
   return digits;
 }
+
+/**
+ * Tolerant parser for invite phone lists. Splits on comma, newline, semicolon,
+ * or whitespace; for each candidate, strips everything except digits and `+`,
+ * then re-validates as E.164. Returns one row per candidate with `raw`,
+ * `e164`, and `valid` so the UI can show invalid entries with a hint.
+ *
+ * Duplicates after the first occurrence are flagged invalid so the user
+ * notices, rather than silently de-duped.
+ */
+export function parsePhoneList( raw ) {
+  if ( ! raw ) return [];
+  const candidates = raw.split( /[\s,;]+/ ).filter( Boolean );
+  const seen = new Set();
+  return candidates.map( ( c ) => {
+    const e164 = normalizePhone( c );
+    const valid = !! e164 && ! seen.has( e164 );
+    if ( valid ) seen.add( e164 );
+    return { raw: c, e164: e164 || c, valid };
+  } );
+}
