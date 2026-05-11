@@ -133,6 +133,18 @@ final class Routes {
             'callback'            => [ $this, 'remove_reaction' ],
         ] );
 
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/poll-vote', [
+            'methods'             => 'POST',
+            // Reuse `heyfam_react` — voting is a similar lightweight action
+            // that every member can do; no new cap needed.
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_react' ),
+            'args'                => [
+                'post_id'      => [ 'required' => true, 'type' => 'integer' ],
+                'option_index' => [ 'required' => true, 'type' => 'integer' ],
+            ],
+            'callback'            => [ $this, 'poll_vote' ],
+        ] );
+
         register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/feed', [
             'methods'             => 'GET',
             'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
@@ -650,6 +662,22 @@ final class Routes {
             return \HeyFam\Core\Reactions\Manager::remove( $target_type, $target_id, get_current_user_id(), $emoji );
         } );
         return new \WP_REST_Response( [ 'ok' => true, 'removed' => $removed ], 200 );
+    }
+
+    public function poll_vote( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id      = (int) $request->get_param( '_blog_id' );
+        $post_id      = (int) $request->get_param( 'post_id' );
+        $option_index = (int) $request->get_param( 'option_index' );
+
+        $err = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id, $option_index ) {
+            return \HeyFam\Core\Polls\Manager::vote( $post_id, get_current_user_id(), $option_index );
+        } );
+
+        if ( $err !== null ) {
+            $status = $err === 'closed' ? 410 : 400;
+            return new \WP_REST_Response( [ 'error' => $err ], $status );
+        }
+        return new \WP_REST_Response( [ 'ok' => true ], 200 );
     }
 
     public function feed( \WP_REST_Request $request ): \WP_REST_Response {
