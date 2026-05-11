@@ -9,8 +9,10 @@ final class Serve {
 	}
 
 	public function add_rewrites(): void {
-		add_rewrite_rule( '^sw\.js$',                'index.php?heyfam_pwa=sw', 'top' );
-		add_rewrite_rule( '^manifest\.webmanifest$', 'index.php?heyfam_pwa=manifest', 'top' );
+		// Match with or without a trailing slash — WordPress's canonical redirect
+		// can append one and we'd otherwise 500 on the bare-slug fall-through.
+		add_rewrite_rule( '^sw\.js/?$',                'index.php?heyfam_pwa=sw', 'top' );
+		add_rewrite_rule( '^manifest\.webmanifest/?$', 'index.php?heyfam_pwa=manifest', 'top' );
 	}
 
 	public function add_query_vars( array $vars ): array {
