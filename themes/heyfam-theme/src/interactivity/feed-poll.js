@@ -21,6 +21,9 @@ const { state } = store( 'heyfam/feed', {
     },
     *refresh( heyfam ) {
       if ( ! heyfam.famSlug ) return;
+      // Bail if we're not on the feed page — `reactions.js` calls refresh on
+      // both single+feed stores blindly, so guard against the wasted GET here.
+      if ( ! document.querySelector( '.heyfam-feed__list' ) ) return;
       // Always fetch the full feed — `since` would only return new POSTS, missing
       // updated reactions/comment-counts on existing posts. 50-post cap is fine.
       const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/feed`, {
