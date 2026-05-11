@@ -47,18 +47,82 @@ body { font-family: var( --wp--preset--font-family--system ); }
 }
 
 .heyfam-single { display: grid; gap: 1rem; padding-block: 1rem; }
-.heyfam-comments { display: grid; gap: 0.75rem; }
+.heyfam-comments { display: grid; gap: 0.75rem; padding-top: 0.5rem; }
+
 .heyfam-comment {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 0.6rem;
   background: var( --wp--preset--color--surface );
-  border: 1px solid #efe7d6; border-radius: 12px; padding: 0.6rem 0.8rem;
+  border: 1px solid #efe7d6;
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
 }
-.heyfam-comment--child { margin-left: 1.5rem; }
-.heyfam-comment-form { display: grid; gap: 0.4rem; }
-.heyfam-comment-form textarea { padding: 0.5rem; border: 1px solid #efe7d6; border-radius: 8px; font: inherit; }
+.heyfam-comment[data-depth="1"] { margin-left: 1.25rem; }
+.heyfam-comment[data-depth="2"] { margin-left: 2.5rem; }
+.heyfam-comment[data-depth="3"] { margin-left: 3.75rem; }
+
+.heyfam-comment__avatar {
+  position: relative;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: white; font-weight: 600; font-size: 0.85rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.heyfam-comment__avatar-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.heyfam-comment__avatar-initial {
+  position: relative; z-index: 0;
+}
+
+.heyfam-comment__main { display: grid; gap: 0.3rem; min-width: 0; }
+.heyfam-comment__header {
+  display: flex; gap: 0.4rem; align-items: baseline;
+  font-size: 0.85rem; color: #6e655c;
+}
+.heyfam-comment__header strong { color: #1f1d1a; font-size: 0.9rem; }
+.heyfam-comment__sep { opacity: 0.5; }
+.heyfam-comment__attribution {
+  margin: 0; font-size: 0.8rem; color: #6e655c;
+}
+.heyfam-comment__body { margin: 0; word-wrap: break-word; }
+
+.heyfam-comment__footer {
+  display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+}
+.heyfam-comment__footer .heyfam-reactions { flex-wrap: wrap; }
+.heyfam-comment__reply {
+  background: none; border: 0; padding: 0.15rem 0.4rem;
+  color: #6e655c; font: inherit; cursor: pointer;
+}
+.heyfam-comment__reply:hover { color: #1f1d1a; }
+.heyfam-comment__react { font-weight: 600; }
+
+.heyfam-comment-form {
+  display: grid; gap: 0.4rem;
+}
+.heyfam-comment-form textarea {
+  padding: 0.5rem; border: 1px solid #efe7d6; border-radius: 8px; font: inherit;
+  width: 100%;
+}
+.heyfam-comment-form__actions {
+  display: flex; gap: 0.4rem; justify-content: end;
+}
 .heyfam-comment-form button {
-  justify-self: end; padding: 0.4rem 0.9rem; border: 0;
+  padding: 0.4rem 0.9rem; border: 0;
   background: var( --wp--preset--color--accent ); color: white; border-radius: 999px;
+  cursor: pointer; font: inherit;
 }
+.heyfam-comment-form button[type="button"] {
+  background: transparent; color: #6e655c;
+}
+.heyfam-comment-form--inline { display: none; margin-top: 0.4rem; }
+.heyfam-comment-form--inline.is-open { display: grid; }
+.heyfam-comment-form--root { margin-top: 0.75rem; }
 
 .heyfam-auth { max-width: 420px; padding-block: 2rem; }
 .heyfam-auth h1 { margin-bottom: 1rem; }
