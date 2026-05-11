@@ -7,17 +7,27 @@
     <h1>Log in</h1>
 
     <form data-wp-class--is-hidden="state.phoneFormHidden" data-wp-on--submit="actions.submitPhone">
-      <label>Your phone <input type="tel" data-wp-on--input="actions.updatePhone" data-wp-bind--value="state.phone" placeholder="+15555550100" required /></label>
+      <label>Your phone
+        <input class="heyfam-input" type="tel" inputmode="tel" autocomplete="tel"
+               data-wp-on--input="actions.updatePhone" data-wp-bind--value="state.phone"
+               placeholder="+15555550100" required />
+      </label>
       <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
-      <button type="submit" data-wp-bind--disabled="state.busy">Send code</button>
+      <button type="submit" class="heyfam-button heyfam-button--primary heyfam-button--block"
+              data-wp-bind--disabled="state.busy">Send code</button>
     </form>
 
     <form data-wp-class--is-hidden="state.codeFormHidden" data-wp-on--submit="actions.submitCode">
       <p>We sent a 6-digit code to <strong data-wp-text="state.phone"></strong>.</p>
-      <label>Code <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" data-wp-on--input="actions.updateCode" data-wp-bind--value="state.code" required /></label>
+      <label>Code
+        <input class="heyfam-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+               data-wp-on--input="actions.updateCode" data-wp-bind--value="state.code" required />
+      </label>
       <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
-      <button type="submit" data-wp-bind--disabled="state.busy">Log in</button>
-      <button type="button" data-wp-on--click="actions.backToPhone">Use a different number</button>
+      <button type="submit" class="heyfam-button heyfam-button--primary heyfam-button--block"
+              data-wp-bind--disabled="state.busy">Log in</button>
+      <button type="button" class="heyfam-button heyfam-button--ghost"
+              data-wp-on--click="actions.backToPhone">Use a different number</button>
     </form>
   </div>
   <!-- /wp:html -->

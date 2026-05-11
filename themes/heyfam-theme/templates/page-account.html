@@ -6,6 +6,25 @@
   <div data-wp-interactive="heyfam/account" data-wp-init="callbacks.init">
     <h1>Account settings</h1>
 
+    <section class="heyfam-account__avatar heyfam-card heyfam-card--tight"
+             data-wp-init="callbacks.loadMe">
+      <img class="heyfam-avatar heyfam-avatar--lg"
+           data-wp-bind--src="state.me.avatar_url" alt="Your avatar" />
+      <div class="heyfam-stack heyfam-stack--tight">
+        <strong data-wp-text="state.me.name">Your name</strong>
+        <div class="heyfam-account__avatar-actions">
+          <label class="heyfam-button heyfam-button--secondary">
+            <input type="file" accept="image/*" hidden
+                   data-wp-on--change="actions.pickAvatar" />
+            Change photo
+          </label>
+          <button type="button" class="heyfam-button heyfam-button--ghost"
+                  data-wp-class--is-hidden="!state.me.has_uploaded_avatar"
+                  data-wp-on--click="actions.clearAvatar">Reset</button>
+        </div>
+      </div>
+    </section>
+
     <p data-wp-class--is-hidden="!state.loading">Loading…</p>
     <p class="error" data-wp-class--is-hidden="!state.loadError" data-wp-text="state.loadError"></p>
 

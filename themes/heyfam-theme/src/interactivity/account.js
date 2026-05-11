@@ -10,6 +10,7 @@ const { state, actions } = store( 'heyfam/account', {
     loading: true,
     loadError: '',
     pushPermission: initialPushPermission,
+    me: { name: '', avatar_url: '', has_uploaded_avatar: false },
     get logoutUrl() {
       return store( 'heyfam' ).state.logoutUrl || '/wp-login.php?action=logout';
     },
@@ -52,8 +53,59 @@ const { state, actions } = store( 'heyfam/account', {
         // ignore
       }
     },
+    *pickAvatar( e ) {
+      const file = e?.target?.files?.[ 0 ];
+      if ( ! file ) return;
+      const heyfam = store( 'heyfam' ).state;
+      const fd = new FormData();
+      fd.append( 'photo', file );
+      try {
+        const r = yield fetch( `${ heyfam.apiBase }/me/avatar`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'X-WP-Nonce': heyfam.nonce }, body: fd,
+        } );
+        if ( ! r.ok ) throw new Error( 'avatar-failed' );
+        const body = yield r.json();
+        state.me.avatar_url          = body.avatar_url;
+        state.me.has_uploaded_avatar = true;
+      } catch ( err ) {
+        alert( 'Could not update photo. Try again.' );
+      }
+    },
+    *clearAvatar() {
+      const heyfam = store( 'heyfam' ).state;
+      try {
+        const r = yield fetch( `${ heyfam.apiBase }/me/avatar`, {
+          method: 'DELETE', credentials: 'include',
+          headers: { 'X-WP-Nonce': heyfam.nonce },
+        } );
+        if ( ! r.ok ) throw new Error( 'reset-failed' );
+        const body = yield r.json();
+        state.me.avatar_url          = body.avatar_url;
+        state.me.has_uploaded_avatar = false;
+      } catch ( err ) {
+        alert( 'Could not reset. Try again.' );
+      }
+    },
   },
   callbacks: {
+    *loadMe() {
+      const heyfam = store( 'heyfam' ).state;
+      if ( ! heyfam.userId ) return;
+      try {
+        const r = yield fetch( `${ heyfam.apiBase }/me`, {
+          credentials: 'include',
+          headers: { 'X-WP-Nonce': heyfam.nonce },
+        } );
+        if ( ! r.ok ) return;
+        const body = yield r.json();
+        state.me.name                = body.name || '';
+        state.me.avatar_url          = body.avatar_url || '';
+        state.me.has_uploaded_avatar = !! body.has_uploaded_avatar;
+      } catch ( err ) {
+        // ignore; the page still works without the avatar block
+      }
+    },
     *init() {
       // SSR doesn't render the is-hidden class on these elements. IAPI's hydration
       // skips re-applying class bindings whose initial DOM state matches the
