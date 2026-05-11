@@ -122,7 +122,7 @@ final class FanOut {
 		return array_unique( $ids );
 	}
 
-	private function dispatch( int $user_id, int $blog_id, string $event, array $payload ): void {
+	public function dispatch( int $user_id, int $blog_id, string $event, array $payload ): void {
 		if ( Prefs::should_notify( $user_id, $blog_id, $event, 'push' ) ) {
 			Push::send( $user_id, [
 				'title' => $payload['title'],

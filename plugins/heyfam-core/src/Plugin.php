@@ -3,6 +3,7 @@ namespace HeyFam\Core;
 
 final class Plugin {
 	public function boot(): void {
+		new \HeyFam\Core\Cli\Bootstrap();
 		new \HeyFam\Core\Privacy\PIIShield();
 		new \HeyFam\Core\REST\Routes();
 		new \HeyFam\Core\Fams\Roles();
