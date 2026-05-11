@@ -17,6 +17,7 @@ final class Plugin {
 		add_action( 'wp_initialize_site', static function ( \WP_Site $site ) {
 			\HeyFam\Core\Fams\Invites::create_table(      (int) $site->blog_id );
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
+			\HeyFam\Core\Polls\Manager::create_table(     (int) $site->blog_id );
 		}, 30, 1 );
 
 		// Register custom image sizes used by the in-feed gallery + lightbox.
@@ -54,6 +55,9 @@ final class Plugin {
 		}
 		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
+		}
+		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
+			\HeyFam\Core\Polls\Manager::create_table( (int) $site->blog_id );
 		}
 		\HeyFam\Core\Notifs\Push::create_table();
 		\HeyFam\Core\PageBootstrap::ensure_pages();
