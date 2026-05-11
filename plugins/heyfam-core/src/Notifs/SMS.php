@@ -7,6 +7,14 @@ use Twilio\Exceptions\TwilioException;
 final class SMS {
 	public static function send( string $to_e164, string $body ): bool {
 		if ( self::is_opted_out( $to_e164 ) ) return false;
+
+		// Dev mode: no Twilio creds. Log the body and short-circuit. Same condition
+		// the verify flow already uses (Auth\PhoneSignup::is_dev_mode).
+		if ( ! getenv( 'TWILIO_ACCOUNT_SID' ) ) {
+			error_log( sprintf( '[heyfam dev SMS] To=%s Body=%s', $to_e164, $body ) );
+			return true;
+		}
+
 		try {
 			TwilioClient::rest()->messages->create( $to_e164, [
 				'messagingServiceSid' => TwilioClient::messaging_sid(),
