@@ -645,6 +645,7 @@ final class Routes {
             'photo_url'   => $thumb ?: null,
             'reactions'   => \HeyFam\Core\Reactions\Manager::counts_for( 'post', $p->ID ),
             'comment_count' => (int) $p->comment_count,
+            'permalink'   => get_permalink( $p ),
         ];
     }
 
