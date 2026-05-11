@@ -1,4 +1,5 @@
 import { store } from '@wordpress/interactivity';
+import { currentPostId } from '../lib/dom.js';
 
 /**
  * One store, two pages. On the feed page `state.posts` is the full list;
@@ -41,8 +42,3 @@ const { state } = store( 'heyfam/feed', {
   },
 } );
 
-/** Returns the WP post id when we're on a singular post page, else 0. */
-function currentPostId() {
-  const m = document.body.className.match( /\bpostid-(\d+)\b/ );
-  return m ? parseInt( m[ 1 ], 10 ) : 0;
-}

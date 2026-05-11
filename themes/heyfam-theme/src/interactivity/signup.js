@@ -1,4 +1,6 @@
 import { store } from '@wordpress/interactivity';
+import { normalizePhone } from '../lib/phone.js';
+import { slugify } from '../lib/slug.js';
 
 const { state, actions } = store( 'heyfam/signup', {
   state: {
@@ -129,13 +131,3 @@ function setStage( next ) {
   state.profileFormHidden = next !== 'profile';
 }
 
-function normalizePhone( raw ) {
-  const digits = ( raw || '' ).replace( /[^0-9+]/g, '' );
-  if ( ! digits.startsWith( '+' ) ) return null;
-  if ( digits.length < 8 || digits.length > 16 ) return null;
-  return digits;
-}
-
-function slugify( s ) {
-  return ( s || '' ).toLowerCase().replace( /[^a-z0-9]+/g, '-' ).replace( /^-+|-+$/g, '' );
-}

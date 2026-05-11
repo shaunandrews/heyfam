@@ -1,4 +1,5 @@
 import { store } from '@wordpress/interactivity';
+import { normalizePhone } from '../lib/phone.js';
 
 const { state, actions } = store( 'heyfam/login', {
   state: {
@@ -92,9 +93,3 @@ function setStage( next ) {
   state.codeFormHidden  = next !== 'code';
 }
 
-function normalizePhone( raw ) {
-  const digits = ( raw || '' ).replace( /[^0-9+]/g, '' );
-  if ( ! digits.startsWith( '+' ) ) return null;
-  if ( digits.length < 8 || digits.length > 16 ) return null;
-  return digits;
-}
