@@ -20,6 +20,7 @@ final class Bootstrap {
 
 		// Alphabetized by subcommand. Add new commands inline; keep the order.
 		\WP_CLI::add_command( 'heyfam reset-me',               ResetMe::class );
+		\WP_CLI::add_command( 'heyfam seed-demo',              SeedDemo::class );
 		\WP_CLI::add_command( 'heyfam send-test-notification', SendTestNotificationCommand::class );
 	}
 }
