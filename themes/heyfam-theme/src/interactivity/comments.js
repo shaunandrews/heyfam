@@ -88,8 +88,9 @@ store( 'heyfam/single', {
   callbacks: {
     *bootstrap() {
       const heyfam = store( 'heyfam' ).state;
-      yield this.refresh( heyfam );
-      setInterval( () => this.refresh( heyfam ), 10000 );
+      const single = store( 'heyfam/single' );
+      yield single.callbacks.refresh( heyfam );
+      setInterval( () => single.callbacks.refresh( heyfam ), 10000 );
     },
     *refresh( heyfam ) {
       const post_id = currentPostId();
