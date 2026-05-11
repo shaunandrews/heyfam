@@ -65,9 +65,20 @@ add_action( 'wp_enqueue_scripts', static function () {
         'userId'    => get_current_user_id(),
         'logoutUrl' => is_user_logged_in() ? wp_logout_url( '/' ) : '',
         'devMode'   => ! getenv( 'TWILIO_ACCOUNT_SID' ),
+        'devBanner' => ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_user_logged_in() ),
     ] );
 
 } );
+
+// The dev-banner template part is referenced from the site header so it mounts
+// site-wide. Gate it server-side: when WP_DEBUG is off OR the user is not
+// signed in, render nothing — anonymous prod visitors never see it.
+add_filter( 'render_block_core/template-part', static function ( $content, $block ) {
+    $slug = $block['attrs']['slug'] ?? '';
+    if ( $slug !== 'dev-banner' ) return $content;
+    if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_user_logged_in() ) ) return '';
+    return $content;
+}, 10, 2 );
 
 // SSR initial post data for the feed / single page so first paint is instant.
 // Hook `wp` (after the main query resolves) so the state is populated before

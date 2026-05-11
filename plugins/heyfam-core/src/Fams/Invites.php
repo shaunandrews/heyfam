@@ -40,6 +40,9 @@ final class Invites {
 			'code_hash'          => $hash,
 			'expires_at'         => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
 		] );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			update_site_option( '_heyfam_dev_invite_' . md5( $phone_e164 ), $code );
+		}
 		return $code;
 	}
 

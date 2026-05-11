@@ -1,0 +1,17 @@
+<!-- wp:html -->
+<aside class="heyfam-dev"
+       data-wp-interactive="heyfam/dev"
+       data-wp-class--is-open="state.open">
+  <button class="heyfam-dev__toggle" data-wp-on--click="actions.toggle">dev</button>
+  <div class="heyfam-dev__panel" data-wp-class--is-hidden="!state.open">
+    <h4>Dev shortcuts</h4>
+    <p class="heyfam-dev__msg" data-wp-text="state.message"></p>
+    <ul>
+      <li><button data-wp-on--click="actions.resetMe" data-wp-bind--disabled="state.busy">Reset me</button></li>
+      <li><button data-wp-on--click="actions.seedDemo" data-wp-bind--disabled="state.busy">Seed demo fam</button></li>
+      <li><a href="/wp-login.php?action=logout">Log out</a></li>
+      <li><a href="/wp-admin/">Open wp-admin</a></li>
+    </ul>
+  </div>
+</aside>
+<!-- /wp:html -->

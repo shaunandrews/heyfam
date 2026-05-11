@@ -479,3 +479,73 @@
   box-shadow:                  var(--hf-shadow-lg);
   border-radius:               var(--hf-radius-lg);
 }
+
+/* --- Dev banner (WP_DEBUG only) ---------------------------------- */
+.heyfam-dev {
+  position: fixed;
+  right: var(--hf-space-3);
+  bottom: var(--hf-space-3);
+  z-index: var(--hf-z-toast);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.heyfam-dev__toggle {
+  background: var(--hf-color-fg);
+  color: var(--hf-color-bg);
+  border: 0;
+  border-radius: var(--hf-radius-pill);
+  padding: var(--hf-space-1) var(--hf-space-3);
+  font-size: var(--hf-font-size-xs);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-dev__toggle:hover { opacity: 1; }
+.heyfam-dev__panel {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + var(--hf-space-2));
+  right: 0;
+  width: 14rem;
+  padding: var(--hf-space-3) var(--hf-space-4);
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  box-shadow: var(--hf-shadow-lg);
+}
+.heyfam-dev.is-open .heyfam-dev__panel { display: block; }
+.heyfam-dev__panel h4 {
+  margin: 0 0 var(--hf-space-2);
+  font-size: var(--hf-font-size-xs);
+  color: var(--hf-color-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.heyfam-dev__msg {
+  font-size: var(--hf-font-size-xs);
+  color: var(--hf-color-fg-muted);
+  min-height: 1em;
+  margin: 0 0 var(--hf-space-2);
+}
+.heyfam-dev ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--hf-space-1);
+}
+.heyfam-dev button,
+.heyfam-dev a {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: var(--hf-space-1) 0;
+  color: var(--hf-color-fg);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.heyfam-dev button:hover,
+.heyfam-dev a:hover { color: var(--hf-color-accent); }
+.heyfam-dev button:disabled { opacity: 0.5; cursor: not-allowed; }
