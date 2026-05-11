@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c9e0cb535f35968a2ab3eeac42f96290",
+    "content-hash": "dc5a9905acbe667636f793bde90f323b",
     "packages": [
         {
             "name": "brick/math",
@@ -1174,6 +1174,36 @@
                 }
             ],
             "time": "2026-04-14T07:44:20+00:00"
+        },
+        {
+            "name": "wi-wissen/boring-avatars",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wi-wissen/boring-avatars.git",
+                "reference": "60fb39e119f1ef230db2a471109575d43aa4fe6f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wi-wissen/boring-avatars/zipball/60fb39e119f1ef230db2a471109575d43aa4fe6f",
+                "reference": "60fb39e119f1ef230db2a471109575d43aa4fe6f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Boring Avatars are tiny PHP Classes that generates custom, SVG-based avatars from any username and color palette like https://github.com/boringdesigners/boring-avatars.",
+            "support": {
+                "issues": "https://github.com/wi-wissen/boring-avatars/issues",
+                "source": "https://github.com/wi-wissen/boring-avatars/tree/main"
+            },
+            "time": "2023-01-01T09:49:56+00:00"
         },
         {
             "name": "woocommerce/action-scheduler",
@@ -3082,7 +3112,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "wi-wissen/boring-avatars": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

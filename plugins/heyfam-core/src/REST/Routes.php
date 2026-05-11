@@ -638,7 +638,11 @@ final class Routes {
             'body'            => self::plain_text( $p->post_content ),
             'created_at'      => mysql2date( 'c', $p->post_date_gmt, false ),
             'relative_time'   => self::relative_time( $p->post_date_gmt ),
-            'author'          => [ 'id' => $p->post_author, 'name' => $author ? $author->display_name : 'Unknown' ],
+            'author'          => [
+                'id'         => (int) $p->post_author,
+                'name'       => $author ? $author->display_name : 'Unknown',
+                'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( (int) $p->post_author ),
+            ],
             'photo_url'       => $thumb ?: null,
             'reactions'       => $reactions,
             'reactionEntries' => self::entries( $reactions ),
@@ -677,24 +681,23 @@ final class Routes {
         $visual_depth = min( $depth, self::MAX_VISUAL_DEPTH );
         $is_deep      = $depth > self::MAX_VISUAL_DEPTH;
         $user_id      = (int) $c->user_id;
-        $color        = self::avatar_color( $user_id );
         $name         = (string) $c->comment_author;
-        $initial      = $name !== '' ? mb_strtoupper( mb_substr( $name, 0, 1 ) ) : '?';
         return [
             'id'              => (int) $c->comment_ID,
             'parent_id'       => (int) $c->comment_parent,
             'body'            => self::plain_text( $c->comment_content ),
             'created_at'      => mysql2date( 'c', $c->comment_date_gmt, false ),
-            'author'          => [ 'id' => $user_id, 'name' => $name ],
+            'author'          => [
+                'id'         => $user_id,
+                'name'       => $name,
+                'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( $user_id ),
+            ],
             'reactions'       => $reactions,
             'reactionEntries' => self::entries( $reactions ),
             'depth'           => $visual_depth,
             'is_deep'         => $is_deep,
             'parent_name'     => $is_deep ? $parent_name : '',
             'relative_time'   => self::relative_time( $c->comment_date_gmt ),
-            'avatar_color'    => $color,
-            'avatar_style'    => "background:$color",
-            'avatar_initial'  => $initial,
         ];
     }
 
@@ -704,11 +707,6 @@ final class Routes {
             $out[] = [ $k, $v ];
         }
         return $out;
-    }
-
-    private static function avatar_color( int $user_id ): string {
-        $hue = ( $user_id * 137 ) % 360;
-        return "hsl($hue, 60%, 55%)";
     }
 
     private static function relative_time( string $mysql_gmt ): string {
