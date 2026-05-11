@@ -196,6 +196,24 @@ final class Routes {
                 ], 200 );
             },
         ] );
+
+        register_rest_route( 'heyfam/v1', '/me', [
+            'methods'             => 'GET',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => [ $this, 'me_get' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/me/avatar', [
+            'methods'             => 'POST',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => [ $this, 'me_avatar_set' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/me/avatar', [
+            'methods'             => 'DELETE',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => [ $this, 'me_avatar_clear' ],
+        ] );
     }
 
     public function signup_start( \WP_REST_Request $request ): \WP_REST_Response {
@@ -624,6 +642,53 @@ final class Routes {
         $prefs   = (array) $request->get_param( 'prefs' );
         \HeyFam\Core\Notifs\Prefs::set( get_current_user_id(), $blog_id, $prefs );
         return new \WP_REST_Response( [ 'ok' => true ], 200 );
+    }
+
+    public function me_get(): \WP_REST_Response {
+        $uid      = get_current_user_id();
+        $user     = get_userdata( $uid );
+        $uploaded = (int) get_user_meta( $uid, 'heyfam_avatar_attachment_id', true ) > 0;
+        return new \WP_REST_Response( [
+            'id'                  => $uid,
+            'name'                => $user ? $user->display_name : '',
+            'avatar_url'          => \HeyFam\Core\Avatars\Avatar::url_for_user( $uid, 96 ),
+            'has_uploaded_avatar' => $uploaded,
+        ], 200 );
+    }
+
+    public function me_avatar_set( \WP_REST_Request $request ): \WP_REST_Response {
+        $files = $request->get_file_params();
+        $photo = $files['photo'] ?? null;
+        if ( ! $photo || empty( $photo['tmp_name'] ) ) {
+            return new \WP_REST_Response( [ 'error' => 'no_file' ], 400 );
+        }
+        $allowed = [ 'image/jpeg', 'image/png', 'image/webp', 'image/gif' ];
+        $type    = wp_check_filetype( $photo['name'] )['type'] ?? '';
+        if ( ! in_array( $type, $allowed, true ) ) {
+            return new \WP_REST_Response( [ 'error' => 'bad_type' ], 400 );
+        }
+        $uid    = get_current_user_id();
+        $result = \HeyFam\Core\Avatars\Avatar::set_for_user( $uid, $photo );
+        if ( is_wp_error( $result ) ) {
+            return new \WP_REST_Response( [ 'error' => $result->get_error_code() ], 400 );
+        }
+        return new \WP_REST_Response( [
+            'ok'         => true,
+            'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( $uid, 96 ),
+        ], 200 );
+    }
+
+    public function me_avatar_clear(): \WP_REST_Response {
+        $uid      = get_current_user_id();
+        $existing = (int) get_user_meta( $uid, 'heyfam_avatar_attachment_id', true );
+        if ( $existing ) {
+            wp_delete_attachment( $existing, true );
+            delete_user_meta( $uid, 'heyfam_avatar_attachment_id' );
+        }
+        return new \WP_REST_Response( [
+            'ok'         => true,
+            'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( $uid, 96 ),
+        ], 200 );
     }
 
     /** Max visible nesting depth before comments flatten to one indent with @parent attribution. */
