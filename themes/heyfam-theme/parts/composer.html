@@ -1,14 +1,39 @@
 <!-- wp:html -->
 <form class="heyfam-composer"
       data-wp-interactive="heyfam/composer"
-      data-wp-on--submit="actions.submit">
+      data-wp-on--submit="actions.submit"
+      data-wp-on--dragover="actions.onDragOver"
+      data-wp-on--dragleave="actions.onDragLeave"
+      data-wp-on--drop="actions.onDrop">
   <textarea class="heyfam-textarea" name="body" rows="2" placeholder="Hey fam…"
             data-wp-bind--value="state.body"
-            data-wp-on--input="actions.updateBody" required></textarea>
+            data-wp-on--input="actions.updateBody"
+            data-wp-on--paste="actions.onPaste" required></textarea>
+
+  <ul class="heyfam-composer__previews"
+      data-wp-class--is-hidden="!state.hasFiles">
+    <template data-wp-each="state.pending" data-wp-each-key="context.item.id">
+      <li class="heyfam-composer__preview">
+        <img data-wp-bind--src="context.item.previewUrl" alt="" />
+        <button type="button" class="heyfam-composer__preview-remove"
+                aria-label="Remove"
+                data-wp-on--click="actions.removeFile">×</button>
+        <span class="heyfam-composer__preview-status"
+              data-wp-text="context.item.status"
+              data-wp-class--is-hidden="context.item.status === 'ready'"></span>
+      </li>
+    </template>
+  </ul>
+
+  <p class="heyfam-composer__error"
+     data-wp-text="state.error"
+     data-wp-class--is-hidden="!state.error"></p>
+
   <div class="heyfam-row heyfam-row--between">
     <label class="heyfam-composer__photo">
-      <input type="file" accept="image/*" data-wp-on--change="actions.pickPhoto" hidden />
-      <span class="heyfam-pill" data-wp-text="state.photoLabel">Add photo</span>
+      <input type="file" accept="image/*,.heic,.heif" multiple
+             data-wp-on--change="actions.pickPhotos" hidden />
+      <span class="heyfam-pill" data-wp-text="state.photoLabel">Add photos</span>
     </label>
     <button type="submit" class="heyfam-button heyfam-button--primary" data-wp-bind--disabled="state.submitting">
       <span data-wp-class--is-hidden="state.submitting">Post</span>
