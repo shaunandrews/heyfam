@@ -69,6 +69,7 @@ final class PhoneSignup {
 		}
 		update_user_meta( $user_id, 'phone_e164', $phone_e164 );
 		update_user_meta( $user_id, 'phone_verified_at', gmdate( 'c' ) );
+		update_user_meta( $user_id, 'heyfam_onboarded_at', gmdate( 'c' ) );
 		return (int) $user_id;
 	}
 

@@ -63,7 +63,8 @@ final class Routes {
             'methods'             => 'POST',
             'permission_callback' => [ $this, 'require_fam_cap_invite' ],
             'args'                => [
-                'phones' => [ 'required' => true, 'type' => 'array' ],
+                'phones'       => [ 'required' => true,  'type' => 'array' ],
+                'message_note' => [ 'required' => false, 'type' => 'string' ],
             ],
             'callback'            => [ $this, 'invite_issue' ],
         ] );
@@ -72,9 +73,9 @@ final class Routes {
             'methods'             => 'POST',
             'permission_callback' => '__return_true',
             'args'                => [
-                'code'         => [ 'required' => true, 'type' => 'string' ],
-                'phone'        => [ 'required' => true, 'type' => 'string' ],
-                'sms_code'     => [ 'required' => true, 'type' => 'string' ],
+                'code'         => [ 'required' => true,  'type' => 'string' ],
+                'phone'        => [ 'required' => false, 'type' => 'string' ],
+                'sms_code'     => [ 'required' => false, 'type' => 'string' ],
                 'display_name' => [ 'required' => false, 'type' => 'string' ],
             ],
             'callback'            => [ $this, 'invite_accept' ],
@@ -194,6 +195,24 @@ final class Routes {
                 return new \WP_REST_Response( [
                     'fams' => \HeyFam\Core\Fams\Membership::user_blogs( get_current_user_id() ),
                 ], 200 );
+            },
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/me/skip-invites', [
+            'methods'             => 'POST',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => static function () {
+                update_user_meta( get_current_user_id(), 'heyfam_invites_skipped_at', gmdate( 'c' ) );
+                return new \WP_REST_Response( [ 'ok' => true ], 200 );
+            },
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/me/dismiss-nudge', [
+            'methods'             => 'POST',
+            'permission_callback' => static fn() => is_user_logged_in(),
+            'callback'            => static function () {
+                update_user_meta( get_current_user_id(), 'heyfam_invites_nudge_dismissed_at', gmdate( 'c' ) );
+                return new \WP_REST_Response( [ 'ok' => true ], 200 );
             },
         ] );
 
@@ -354,6 +373,12 @@ final class Routes {
         $phones  = array_filter( array_map( [ $this, 'normalize_phone' ], (array) $request->get_param( 'phones' ) ) );
         if ( ! $phones ) return new \WP_REST_Response( [ 'error' => 'no_valid_phones' ], 400 );
 
+        $note = trim( (string) ( $request->get_param( 'message_note' ) ?? '' ) );
+        $note = wp_strip_all_tags( $note, true );
+        if ( $note !== '' && mb_strlen( $note ) > 120 ) {
+            $note = mb_substr( $note, 0, 120 );
+        }
+
         switch_to_blog( $blog_id );
         try {
             $issued = [];
@@ -362,7 +387,8 @@ final class Routes {
                 $code = \HeyFam\Core\Fams\Invites::issue( $blog_id, get_current_user_id(), $phone );
                 $url  = home_url( '/i/' . rawurlencode( $code ) );
                 $name = wp_get_current_user()->display_name;
-                $msg  = sprintf( '%s invited you to %s — tap to join: %s', $name, $blog->blogname, $url );
+                $base = sprintf( '%s invited you to %s — tap to join: %s', $name, $blog->blogname, $url );
+                $msg  = $note !== '' ? $base . ' (' . $note . ')' : $base;
                 // Notifs\SMS::send() lands in Task 27. Until then, log so we can copy/paste the link in dev.
                 if ( class_exists( '\\HeyFam\\Core\\Notifs\\SMS' ) ) {
                     \HeyFam\Core\Notifs\SMS::send( $phone, $msg );
@@ -379,9 +405,44 @@ final class Routes {
 
     public function invite_accept( \WP_REST_Request $request ): \WP_REST_Response {
         $code     = trim( (string) $request->get_param( 'code' ) );
-        $phone    = $this->normalize_phone( $request->get_param( 'phone' ) );
-        $sms_code = trim( (string) $request->get_param( 'sms_code' ) );
-        if ( ! $code || ! $phone || ! $sms_code ) {
+        $sms_code = trim( (string) ( $request->get_param( 'sms_code' ) ?? '' ) );
+        if ( ! $code ) {
+            return new \WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
+        }
+
+        // Logged-in fast path — used when the inviter sent the link to a phone
+        // that already belongs to a HeyFam account; the user just needs to join.
+        if ( is_user_logged_in() && $sms_code === '' ) {
+            $user_id    = get_current_user_id();
+            $user_phone = (string) get_user_meta( $user_id, 'phone_e164', true );
+            if ( ! $user_phone ) {
+                return new \WP_REST_Response( [ 'error' => 'no_user_phone' ], 400 );
+            }
+            $blog_id = null;
+            foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
+                $candidate = \HeyFam\Core\Fams\Invites::accept( (int) $site->blog_id, $code, $user_phone );
+                if ( $candidate ) {
+                    $blog_id = (int) $site->blog_id;
+                    break;
+                }
+            }
+            if ( ! $blog_id ) {
+                return new \WP_REST_Response( [ 'error' => 'invalid_or_expired' ], 410 );
+            }
+            \HeyFam\Core\Fams\Membership::add( $user_id, $blog_id );
+            $blog = get_blog_details( $blog_id );
+            return new \WP_REST_Response( [
+                'ok'      => true,
+                'blog_id' => $blog_id,
+                'slug'    => trim( $blog->path, '/' ),
+                'url'     => $blog->siteurl,
+                'nonce'   => wp_create_nonce( 'wp_rest' ),
+            ], 200 );
+        }
+
+        // SMS-code (new user / unauthed device) path — unchanged from prior behavior.
+        $phone = $this->normalize_phone( $request->get_param( 'phone' ) );
+        if ( ! $phone || ! $sms_code ) {
             return new \WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
         }
 
