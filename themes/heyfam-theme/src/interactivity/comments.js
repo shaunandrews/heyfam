@@ -54,7 +54,7 @@ store( 'heyfam/comments', {
       if ( s.submitting || ! s.body.trim() ) return;
       s.submitting = true;
       const heyfam  = store( 'heyfam' ).state;
-      const post_id = parseInt( document.querySelector( '[data-post-id]' )?.dataset.postId, 10 );
+      const post_id = currentPostId();
       try {
         const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/comments`, {
           method: 'POST', credentials: 'include',
@@ -92,7 +92,7 @@ store( 'heyfam/single', {
       setInterval( () => this.refresh( heyfam ), 10000 );
     },
     *refresh( heyfam ) {
-      const post_id = parseInt( document.querySelector( '[data-post-id]' )?.dataset.postId, 10 );
+      const post_id = currentPostId();
       if ( ! post_id ) return;
       const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/post/${post_id}`, {
         credentials: 'include',
@@ -190,6 +190,17 @@ function avatarColor( userId ) {
   // Golden-angle hue spread for distinguishable colors across small N.
   const hue = ( userId * 137 ) % 360;
   return `hsl(${hue}, 60%, 55%)`;
+}
+
+/**
+ * The single-post page needs the post id before any state is hydrated, so it
+ * can't come from `state.post.id` (which only populates after the refresh
+ * fetch — chicken and egg). WordPress always renders `postid-N` on the body
+ * class, so source it from there.
+ */
+function currentPostId() {
+  const m = document.body.className.match( /\bpostid-(\d+)\b/ );
+  return m ? parseInt( m[ 1 ], 10 ) : 0;
 }
 
 function closeOpenInlineForms() {
