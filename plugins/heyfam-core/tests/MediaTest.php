@@ -101,6 +101,24 @@ final class MediaTest extends \WP_UnitTestCase {
         $this->assertNull( $serialized['photo_url'] );
     }
 
+    public function test_serialize_post_legacy_single_photo_renders_in_gallery(): void {
+        $user_id = self::factory()->user->create( [ 'role' => 'editor' ] );
+        wp_set_current_user( $user_id );
+
+        // Simulate an old client posting via the legacy single-photo path.
+        $result     = \HeyFam\Core\Posts\Composer::create( $user_id, 'old client', $this->fixture( 'legacy.jpg' ) );
+        $post       = get_post( $result['post_id'] );
+        $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
+
+        // Both legacy `photo_url` and the new `images[]` are populated.
+        $this->assertNotNull( $serialized['photo_url'] );
+        $this->assertSame( 1, $serialized['image_count'] );
+        $this->assertCount( 1, $serialized['images'] );
+        // The first image's full URL should equal the legacy `photo_url`,
+        // so frozen old clients reading `photo_url` see the same thing.
+        $this->assertSame( $serialized['photo_url'], $serialized['images'][0]['url'] );
+    }
+
     private function fixture( string $name ): array {
         $src = __DIR__ . '/fixtures/' . $name;
         if ( ! file_exists( $src ) ) {
