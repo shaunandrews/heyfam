@@ -34,10 +34,22 @@ add_action( 'wp_enqueue_scripts', static function () {
     );
 
     wp_enqueue_style(
-        'heyfam-main',
-        get_theme_file_uri( 'src/styles/main.css' ),
+        'heyfam-tokens',
+        get_theme_file_uri( 'src/styles/tokens.css' ),
         [],
-        '0.1.0'
+        '0.2.0'
+    );
+    wp_enqueue_style(
+        'heyfam-base',
+        get_theme_file_uri( 'src/styles/base.css' ),
+        [ 'heyfam-tokens' ],
+        '0.2.0'
+    );
+    wp_enqueue_style(
+        'heyfam-components',
+        get_theme_file_uri( 'src/styles/components.css' ),
+        [ 'heyfam-base' ],
+        '0.2.0'
     );
 
     // Surface the WP REST nonce, current fam slug, and VAPID public key to the IAPI store.
