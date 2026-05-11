@@ -39,6 +39,13 @@
       <button type="button" class="heyfam-button heyfam-button--ghost"
               data-wp-on--click="actions.backToPhone">Use a different number</button>
     </form>
+
+    <form data-wp-class--is-hidden="state.loggedInFormHidden" data-wp-on--submit="actions.joinAsCurrentUser">
+      <p>You're already signed in. One tap to join <strong data-wp-text="state.famName"></strong>.</p>
+      <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
+      <button type="submit" class="heyfam-button heyfam-button--primary heyfam-button--block"
+              data-wp-bind--disabled="state.busy">Join <span data-wp-text="state.famName"></span></button>
+    </form>
   </div>
   <!-- /wp:html -->
 </div>

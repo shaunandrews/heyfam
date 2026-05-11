@@ -10,13 +10,15 @@ const { state, actions } = store( 'heyfam/invite', {
     famName: '', inviter: '', phoneHint: '',
     previewLoaded: false, previewError: '',
     error: '', busy: false,
+    isAuthed: false,
     // IAPI directives only react to direct property access. Plain getters
     // computed off other state aren't picked up at hydration, so we keep
     // visibility flags as plain reactive props and recompute them whenever
     // the inputs change. phoneFormHidden depends on both stage and
     // previewError — a broken invite link should keep the form hidden.
-    phoneFormHidden: false,
-    codeFormHidden:  true,
+    phoneFormHidden:    false,
+    codeFormHidden:     true,
+    loggedInFormHidden: true,
   },
   actions: {
     updatePhone( e ) { state.phone = e.target.value; state.error = ''; },
@@ -74,6 +76,31 @@ const { state, actions } = store( 'heyfam/invite', {
         state.busy = false;
       }
     },
+    *joinAsCurrentUser( e ) {
+      e.preventDefault();
+      if ( state.busy ) return;
+      state.busy = true;
+      try {
+        const heyfam = store( 'heyfam' ).state;
+        const r = yield fetch( `${heyfam.apiBase}/invites/accept`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
+          body: JSON.stringify( { code: state.code } ),
+        } );
+        const body = yield r.json().catch( () => ( {} ) );
+        if ( ! r.ok ) {
+          if ( body.error === 'invalid_or_expired' )    state.error = 'This invite is no longer valid.';
+          else if ( body.error === 'no_user_phone' )    state.error = 'This invite was sent to a different number than the one on your account.';
+          else                                           state.error = 'Could not join. Try again.';
+          state.busy = false;
+          return;
+        }
+        window.location.href = body.url;
+      } catch ( err ) {
+        state.error = 'Network error. Try again.';
+        state.busy = false;
+      }
+    },
   },
   callbacks: {
     *init() {
@@ -81,8 +108,12 @@ const { state, actions } = store( 'heyfam/invite', {
       // skips re-applying class bindings whose initial DOM state matches the
       // proxy. Toggle each flag through its opposite to trip the proxy's
       // change-detection, then recomputeVisibility() re-asserts the right values.
-      state.phoneFormHidden = ! state.phoneFormHidden;
-      state.codeFormHidden  = ! state.codeFormHidden;
+      state.phoneFormHidden    = ! state.phoneFormHidden;
+      state.codeFormHidden     = ! state.codeFormHidden;
+      state.loggedInFormHidden = ! state.loggedInFormHidden;
+
+      const heyfam = store( 'heyfam' ).state;
+      state.isAuthed = !! heyfam.userId;
       recomputeVisibility();
 
       // Pull invite code from the URL.
@@ -94,7 +125,6 @@ const { state, actions } = store( 'heyfam/invite', {
       }
       state.code = code;
 
-      const heyfam = store( 'heyfam' ).state;
       try {
         const r = yield fetch(
           `${heyfam.apiBase}/invites/preview?code=${encodeURIComponent( code )}`,
@@ -111,6 +141,7 @@ const { state, actions } = store( 'heyfam/invite', {
         state.inviter       = body.inviter;
         state.phoneHint     = body.phone_hint;
         state.previewLoaded = true;
+        recomputeVisibility();
       } catch ( err ) {
         setPreviewError( 'Could not load invite. Check your connection.' );
       }
@@ -119,8 +150,18 @@ const { state, actions } = store( 'heyfam/invite', {
 } );
 
 function recomputeVisibility() {
-  state.phoneFormHidden = state.stage !== 'phone' || !! state.previewError;
-  state.codeFormHidden  = state.stage !== 'code';
+  // Logged in: skip the phone+SMS dance entirely. Show the one-button form
+  // once the preview loads (so we know what fam they're joining); hide it
+  // if preview failed.
+  if ( state.isAuthed ) {
+    state.phoneFormHidden    = true;
+    state.codeFormHidden     = true;
+    state.loggedInFormHidden = ! state.previewLoaded || !! state.previewError;
+    return;
+  }
+  state.phoneFormHidden    = state.stage !== 'phone' || !! state.previewError;
+  state.codeFormHidden     = state.stage !== 'code';
+  state.loggedInFormHidden = true;
 }
 
 function setStage( next ) {
