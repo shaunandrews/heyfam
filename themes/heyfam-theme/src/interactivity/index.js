@@ -10,4 +10,5 @@ import './login.js';
 import './invite.js';
 import './account.js';
 import './nudge.js';
+import './lightbox.js';
 import './dev-banner.js';
