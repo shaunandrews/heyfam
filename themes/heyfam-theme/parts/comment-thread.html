@@ -1,12 +1,12 @@
 <!-- wp:html -->
-<template data-wp-each="state.comments" data-wp-key="context.item.id">
+<template data-wp-each="state.comments" data-wp-each-key="context.item.id">
   <article class="heyfam-comment"
            data-wp-class--heyfam-comment--deep="context.item.is_deep"
            data-wp-bind--data-depth="context.item.depth"
            data-wp-bind--data-id="context.item.id"
            data-target-type="comment">
     <div class="heyfam-comment__avatar"
-         data-wp-bind--style="`background:${context.item.avatar_color}`">
+         data-wp-bind--style="context.item.avatar_style">
       <img class="heyfam-comment__avatar-img"
            data-wp-bind--src="context.item.author.avatar_url"
            data-wp-class--is-hidden="!context.item.author.avatar_url"
@@ -30,7 +30,7 @@
       <footer class="heyfam-comment__footer"
               data-wp-interactive="heyfam/reactions">
         <ul class="heyfam-reactions">
-          <template data-wp-each--entry="context.item.reactionEntries">
+          <template data-wp-each--entry="heyfam/single::context.item.reactionEntries">
             <li>
               <button data-wp-on--click="actions.toggle">
                 <span data-wp-text="context.entry.0"></span>
@@ -47,7 +47,6 @@
 
       <form class="heyfam-comment-form heyfam-comment-form--inline"
             data-wp-interactive="heyfam/comments"
-            data-wp-class--is-open="state.composing === context.item.id"
             data-wp-on--submit="actions.submit">
         <textarea data-wp-on--input="actions.updateBody"
                   data-wp-bind--value="state.body"

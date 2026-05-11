@@ -21,7 +21,7 @@
     <footer class="heyfam-post-card__reactions"
             data-wp-interactive="heyfam/reactions">
       <ul class="heyfam-reactions">
-        <template data-wp-each--entry="state.post.reactionEntries">
+        <template data-wp-each--entry="heyfam/single::state.post.reactionEntries">
           <li>
             <button data-wp-on--click="actions.toggle">
               <span data-wp-text="context.entry.0"></span>

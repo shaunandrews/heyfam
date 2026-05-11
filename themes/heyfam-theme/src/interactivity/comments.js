@@ -13,10 +13,17 @@ store( 'heyfam/comments', {
   },
   actions: {
     reply() {
-      const ctx = getContext();
+      // The Reply button lives inside `data-wp-interactive="heyfam/comments"`,
+      // but the iterated comment is in the surrounding `heyfam/single` each —
+      // pull context from there explicitly.
+      const ctx = getContext( 'heyfam/single' );
       const id  = ctx?.item?.id ? parseInt( ctx.item.id, 10 ) : 0;
       if ( ! id ) return;
       const s = store( 'heyfam/comments' ).state;
+      // Close whichever inline composer is currently open (IAPI directives
+      // can't evaluate `state.composing === context.item.id`, so visibility is
+      // manipulated through plain DOM here).
+      closeOpenInlineForms();
       if ( s.composing === id ) {
         s.composing      = 0;
         s.topLevelHidden = false;
@@ -25,17 +32,18 @@ store( 'heyfam/comments', {
       s.composing      = id;
       s.body           = '';
       s.topLevelHidden = true;
-      // Defer focus until after the class binding flips and CSS unhides the form.
-      setTimeout( () => {
-        const sel = `[data-id="${id}"] .heyfam-comment-form--inline textarea`;
-        document.querySelector( sel )?.focus();
-      }, 0 );
+      const form = document.querySelector( `[data-id="${id}"] .heyfam-comment-form--inline` );
+      if ( form ) {
+        form.classList.add( 'is-open' );
+        form.querySelector( 'textarea' )?.focus();
+      }
     },
     cancelReply() {
       const s = store( 'heyfam/comments' ).state;
       s.composing      = 0;
       s.body           = '';
       s.topLevelHidden = false;
+      closeOpenInlineForms();
     },
     updateBody( e ) {
       store( 'heyfam/comments' ).state.body = e.target.value;
@@ -60,6 +68,7 @@ store( 'heyfam/comments', {
         s.body           = '';
         s.composing      = 0;
         s.topLevelHidden = false;
+        closeOpenInlineForms();
         store( 'heyfam/single' ).callbacks.refresh( heyfam );
       } catch ( err ) {
         alert( 'Could not comment. Try again.' );
@@ -115,6 +124,7 @@ function decorateComment( c, depth, parentName ) {
   // their parent (one indent up), so attribution is redundant. Attribution
   // kicks in once depth exceeds the cap and the parent shares the same indent.
   const isDeep      = depth > MAX_VISUAL_DEPTH;
+  const color       = avatarColor( c.author?.id || 0 );
   return {
     ...c,
     depth:           visualDepth,
@@ -122,7 +132,10 @@ function decorateComment( c, depth, parentName ) {
     parent_name:     isDeep ? parentName : '',
     reactionEntries: Object.entries( c.reactions || {} ),
     relative_time:   relativeTime( c.created_at ),
-    avatar_color:    avatarColor( c.author?.id || 0 ),
+    avatar_color:    color,
+    // Pre-built CSS string — IAPI's directive evaluator can't run template
+    // literals, so the binding reads this as-is.
+    avatar_style:    `background:${color}`,
     avatar_initial:  ( c.author?.name || '?' ).trim().charAt( 0 ).toUpperCase(),
   };
 }
@@ -177,4 +190,9 @@ function avatarColor( userId ) {
   // Golden-angle hue spread for distinguishable colors across small N.
   const hue = ( userId * 137 ) % 360;
   return `hsl(${hue}, 60%, 55%)`;
+}
+
+function closeOpenInlineForms() {
+  document.querySelectorAll( '.heyfam-comment-form--inline.is-open' )
+    .forEach( ( el ) => el.classList.remove( 'is-open' ) );
 }
