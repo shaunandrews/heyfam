@@ -744,3 +744,96 @@
   color: var(--hf-color-danger);
   font-size: var(--hf-font-size-sm);
 }
+
+/* === Gallery ====================================================== */
+.heyfam-gallery {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  border-radius: var(--hf-radius-md);
+  overflow: hidden;
+  background: var(--hf-color-border);
+}
+.heyfam-gallery--empty { display: none; }
+
+.heyfam-gallery__tile {
+  position: relative;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  cursor: zoom-in;
+  background: none;
+  display: block;
+  overflow: hidden;
+}
+.heyfam-gallery__tile:focus-visible {
+  outline: var(--hf-focus-width) solid var(--hf-color-accent);
+  outline-offset: calc(-1 * var(--hf-focus-width));
+  z-index: 1;
+}
+
+.heyfam-gallery__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+
+/* 1 image: full bleed, native aspect ratio kept up to a 16:9 cap. */
+.heyfam-gallery[data-count="1"] { display: block; }
+.heyfam-gallery[data-count="1"] .heyfam-gallery__img {
+  aspect-ratio: auto;
+  max-height: 540px;
+  object-fit: contain;
+  background: var(--hf-color-fg);
+}
+
+/* 2 images: side-by-side squares. */
+.heyfam-gallery[data-count="2"] {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 3 images: 1 big on the left, 2 stacked on the right. */
+.heyfam-gallery[data-count="3"] {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.heyfam-gallery[data-count="3"] .heyfam-gallery__tile:nth-child(1) {
+  grid-row: 1 / span 2;
+}
+.heyfam-gallery[data-count="3"] .heyfam-gallery__tile:nth-child(1) .heyfam-gallery__img {
+  aspect-ratio: 4 / 5;
+}
+
+/* 4 images: 2x2 grid. */
+.heyfam-gallery[data-count="4"] {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* 5+ images: 2x2 with overflow badge on the 4th tile, rest hidden. */
+.heyfam-gallery[data-count="many"] {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.heyfam-gallery[data-count="many"] .heyfam-gallery__tile:nth-child(n + 5) {
+  display: none;
+}
+.heyfam-gallery__overflow {
+  position: absolute;
+  inset: auto 4px 4px auto;
+  background: rgba(31, 29, 26, 0.75);
+  color: var(--hf-color-accent-fg);
+  padding: 0.15rem var(--hf-space-2);
+  border-radius: var(--hf-radius-pill);
+  font-size: var(--hf-font-size-sm);
+  font-weight: var(--hf-font-weight-semibold);
+  pointer-events: none;
+}
+.heyfam-gallery__overflow::before { content: "+"; }
+
+/* The gallery sits inside the post-card body, but we want it to feel
+ * like media — neutral bezel, rounded corners (already on the gallery
+ * itself). Nothing extra needed here today; leaving the rule for future
+ * tuning when polls/video lands. */

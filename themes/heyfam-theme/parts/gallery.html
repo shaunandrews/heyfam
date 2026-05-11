@@ -1,0 +1,22 @@
+<!-- wp:html -->
+<div class="heyfam-gallery"
+     data-wp-class--heyfam-gallery--empty="!context.item.images.length"
+     data-wp-bind--data-count="context.item.image_count > 4 ? 'many' : context.item.image_count">
+  <template data-wp-each--photo="context.item.images" data-wp-each-key="context.photo.id">
+    <button class="heyfam-gallery__tile"
+            type="button"
+            data-wp-bind--data-image-id="context.photo.id"
+            data-wp-bind--data-post-id="context.item.id"
+            data-wp-interactive="heyfam/lightbox"
+            data-wp-on--click="actions.open">
+      <img class="heyfam-gallery__img"
+           loading="lazy" decoding="async"
+           data-wp-bind--src="context.photo.thumb_url"
+           data-wp-bind--alt="context.photo.alt" />
+    </button>
+  </template>
+  <span class="heyfam-gallery__overflow"
+        data-wp-class--is-hidden="context.item.image_count <= 4"
+        data-wp-text="context.item.image_count"></span>
+</div>
+<!-- /wp:html -->

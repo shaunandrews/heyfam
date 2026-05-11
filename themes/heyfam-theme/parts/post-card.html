@@ -19,9 +19,10 @@
 
     <div class="heyfam-post-card__body" data-wp-text="context.item.body"></div>
 
-    <img class="heyfam-post-card__photo"
-         data-wp-bind--src="context.item.photo_url"
-         data-wp-class--is-hidden="!context.item.photo_url" alt="" />
+    <div class="heyfam-post-card__media"
+         data-wp-class--is-hidden="!context.item.image_count">
+      <!-- wp:template-part {"slug":"gallery"} /-->
+    </div>
 
     <footer class="heyfam-post-card__reactions">
       <ul class="heyfam-reactions">
