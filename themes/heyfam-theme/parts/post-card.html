@@ -49,24 +49,6 @@
                 </span>
               </span>
             </button>
-            <!-- Voter chips (revealed-mode only). Iterates ALL voters and
-                 hides those whose `option_index` doesn't match this option —
-                 IAPI's context rules don't let us key into a parent context
-                 object dynamically (e.g. `voters[option.index]`). A fam is
-                 ≤ ~20 people so the cost is trivial. -->
-            <ul class="heyfam-poll__voters"
-                data-wp-class--is-hidden="context.item.poll.anon">
-              <template data-wp-each--voter="context.item.poll.voters"
-                        data-wp-each-key="context.voter.name">
-                <li class="heyfam-poll__voter-row"
-                    data-wp-class--is-hidden="context.voter.option_index !== context.option.index">
-                  <img class="heyfam-poll__voter heyfam-avatar"
-                       data-wp-bind--src="context.voter.avatar_url"
-                       data-wp-bind--alt="context.voter.name"
-                       data-wp-bind--title="context.voter.name" />
-                </li>
-              </template>
-            </ul>
           </li>
         </template>
       </ul>
@@ -76,10 +58,9 @@
       </p>
     </div>
 
-    <div class="heyfam-post-card__media"
-         data-wp-class--is-hidden="!context.item.image_count || context.item.poll">
-      <!-- wp:template-part {"slug":"gallery"} /-->
-    </div>
+    <img class="heyfam-post-card__photo"
+         data-wp-bind--src="context.item.photo_url"
+         data-wp-class--is-hidden="!context.item.photo_url" alt="" />
 
     <footer class="heyfam-post-card__reactions">
       <ul class="heyfam-reactions">
