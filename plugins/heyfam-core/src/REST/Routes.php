@@ -475,18 +475,25 @@ final class Routes {
         }
 
         $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id, $parent_id, $body ) {
+            $err = self::validate_comment_parent( $parent_id, $post_id );
+            if ( $err ) {
+                return new \WP_Error( $err, 'Invalid parent comment' );
+            }
             $user = wp_get_current_user();
             return wp_insert_comment( [
-                'comment_post_ID' => $post_id,
-                'comment_parent'  => $parent_id,
-                'comment_content' => $body,
-                'comment_author'  => $user->display_name,
+                'comment_post_ID'      => $post_id,
+                'comment_parent'       => $parent_id,
+                'comment_content'      => $body,
+                'comment_author'       => $user->display_name,
                 'comment_author_email' => $user->user_email ?: 'no-reply@heyfam.blog',
-                'user_id'         => $user->ID,
-                'comment_approved' => 1,
+                'user_id'              => $user->ID,
+                'comment_approved'     => 1,
             ] );
         } );
 
+        if ( is_wp_error( $result ) ) {
+            return new \WP_REST_Response( [ 'error' => $result->get_error_code() ], 400 );
+        }
         if ( ! $result ) {
             return new \WP_REST_Response( [ 'error' => 'insert_failed' ], 500 );
         }
@@ -642,14 +649,36 @@ final class Routes {
     }
 
     private static function serialize_comment( \WP_Comment $c ): array {
+        $avatar = get_avatar_url( (int) $c->user_id, [ 'size' => 64, 'default' => '404' ] );
         return [
             'id'         => (int) $c->comment_ID,
             'parent_id'  => (int) $c->comment_parent,
             'body'       => self::plain_text( $c->comment_content ),
             'created_at' => mysql2date( 'c', $c->comment_date_gmt, false ),
-            'author'     => [ 'id' => (int) $c->user_id, 'name' => $c->comment_author ],
+            'author'     => [
+                'id'         => (int) $c->user_id,
+                'name'       => $c->comment_author,
+                'avatar_url' => $avatar ?: null,
+            ],
             'reactions'  => \HeyFam\Core\Reactions\Manager::counts_for( 'comment', (int) $c->comment_ID ),
         ];
+    }
+
+    public static function validate_comment_parent( int $parent_id, int $post_id ): ?string {
+        if ( $parent_id <= 0 ) {
+            return null;
+        }
+        $parent = get_comment( $parent_id );
+        if ( ! $parent ) {
+            return 'invalid_parent';
+        }
+        if ( (int) $parent->comment_post_ID !== $post_id ) {
+            return 'invalid_parent';
+        }
+        if ( (string) $parent->comment_approved !== '1' ) {
+            return 'invalid_parent';
+        }
+        return null;
     }
 
     /**
