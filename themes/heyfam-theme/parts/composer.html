@@ -1,14 +1,52 @@
 <!-- wp:html -->
 <form class="heyfam-composer"
       data-wp-interactive="heyfam/composer"
+      data-wp-class--heyfam-composer--poll="state.pollMode"
       data-wp-on--submit="actions.submit"
       data-wp-on--dragover="actions.onDragOver"
       data-wp-on--dragleave="actions.onDragLeave"
       data-wp-on--drop="actions.onDrop">
-  <textarea class="heyfam-textarea" name="body" rows="2" placeholder="Hey fam…"
+  <textarea class="heyfam-textarea" name="body" rows="2"
+            data-wp-bind--placeholder="state.bodyPlaceholder"
             data-wp-bind--value="state.body"
             data-wp-on--input="actions.updateBody"
             data-wp-on--paste="actions.onPaste" required></textarea>
+
+  <!-- Poll options list — shown only in poll mode. -->
+  <div class="heyfam-composer__poll"
+       data-wp-class--is-hidden="!state.pollMode">
+    <ul class="heyfam-composer__options">
+      <template data-wp-each--option="state.optionList" data-wp-each-key="context.option.id">
+        <li class="heyfam-composer__option">
+          <input type="text" class="heyfam-input"
+                 data-wp-bind--value="context.option.text"
+                 data-wp-bind--placeholder="context.option.placeholder"
+                 data-wp-on--input="actions.updateOption" />
+          <button type="button" class="heyfam-composer__option-remove"
+                  data-wp-on--click="actions.removeOption"
+                  data-wp-class--is-hidden="state.cannotRemove">×</button>
+        </li>
+      </template>
+    </ul>
+    <button type="button" class="heyfam-composer__add-option"
+            data-wp-on--click="actions.addOption"
+            data-wp-class--is-hidden="state.atMaxOptions">+ Add option</button>
+
+    <div class="heyfam-composer__poll-row">
+      <label>
+        <span>Closes</span>
+        <input type="datetime-local" class="heyfam-input"
+               data-wp-bind--value="state.closesAt"
+               data-wp-on--input="actions.updateClosesAt" />
+      </label>
+      <label class="heyfam-composer__anon">
+        <input type="checkbox"
+               data-wp-bind--checked="state.anon"
+               data-wp-on--change="actions.toggleAnon" />
+        <span>Anonymous votes</span>
+      </label>
+    </div>
+  </div>
 
   <ul class="heyfam-composer__previews"
       data-wp-class--is-hidden="!state.hasFiles">
@@ -30,13 +68,18 @@
      data-wp-class--is-hidden="!state.error"></p>
 
   <div class="heyfam-row heyfam-row--between">
-    <label class="heyfam-composer__photo">
+    <label class="heyfam-composer__photo"
+           data-wp-class--is-hidden="state.pollMode">
       <input type="file" accept="image/*,.heic,.heif" multiple
              data-wp-on--change="actions.pickPhotos" hidden />
       <span class="heyfam-pill" data-wp-text="state.photoLabel">Add photos</span>
     </label>
+    <button type="button" class="heyfam-composer__poll-toggle"
+            data-wp-on--click="actions.togglePollMode">
+      <span data-wp-text="state.pollToggleLabel"></span>
+    </button>
     <button type="submit" class="heyfam-button heyfam-button--primary" data-wp-bind--disabled="state.submitting">
-      <span data-wp-class--is-hidden="state.submitting">Post</span>
+      <span data-wp-class--is-hidden="state.submitting" data-wp-text="state.submitLabel"></span>
       <span data-wp-class--is-hidden="!state.submitting">
         <span class="heyfam-spinner"></span>
         Posting…

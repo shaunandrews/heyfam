@@ -4,6 +4,15 @@ import { acceptable, isHeic } from '../lib/media.js';
 const MAX_FILES = 10;
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB per file before client conversion
 
+const MIN_OPTIONS = 2;
+const MAX_OPTIONS = 6;
+let nextOptionId = 1;
+const newOption = ( placeholder ) => ( { id: nextOptionId++, text: '', placeholder } );
+const initialOptions = () => [
+  newOption( 'Option 1' ),
+  newOption( 'Option 2' ),
+];
+
 const { state, actions } = store( 'heyfam/composer', {
   state: {
     body: '',
@@ -15,18 +24,33 @@ const { state, actions } = store( 'heyfam/composer', {
     pending: [],
     submitting: false,
     error: '',
+    // Poll-mode state. `optionList` reuses the same shape across
+    // mode toggles so the user can iterate without losing typed text.
+    pollMode: false,
+    optionList: initialOptions(),
+    closesAt: '',
+    anon: false,
     get hasFiles() { return state.pending.length > 0; },
     get canSubmit() {
+      if ( state.submitting ) return false;
+      if ( state.pollMode ) {
+        // Question (body) + at least MIN_OPTIONS non-empty options.
+        if ( state.body.trim() === '' ) return false;
+        return state.optionList.filter( o => o.text.trim() !== '' ).length >= MIN_OPTIONS;
+      }
       // Allow text-only posts (body trimmed), or any number of ready files.
-      return ! state.submitting && (
-        state.body.trim() !== '' ||
-        state.pending.some( p => p.status === 'ready' )
-      );
+      return state.body.trim() !== '' ||
+        state.pending.some( p => p.status === 'ready' );
     },
     get photoLabel() {
       const n = state.pending.length;
       return n === 0 ? 'Add photos' : `${ n } photo${ n === 1 ? '' : 's' }`;
     },
+    get bodyPlaceholder() { return state.pollMode ? 'Ask a question…' : 'Hey fam…'; },
+    get submitLabel()     { return state.pollMode ? 'Post poll'      : 'Post';      },
+    get pollToggleLabel() { return state.pollMode ? '← Back'         : 'Make it a poll'; },
+    get atMaxOptions()    { return state.optionList.length >= MAX_OPTIONS; },
+    get cannotRemove()    { return state.optionList.length <= MIN_OPTIONS; },
   },
   actions: {
     updateBody( e ) { state.body = e.target.value; },
@@ -79,6 +103,38 @@ const { state, actions } = store( 'heyfam/composer', {
       state.pending.splice( idx, 1 );
     },
 
+    togglePollMode() {
+      state.pollMode = ! state.pollMode;
+      if ( state.pollMode ) {
+        // Drop any pending photo selection when switching into poll mode —
+        // polls don't carry photos in v1.
+        for ( const p of state.pending ) {
+          if ( p.previewUrl ) URL.revokeObjectURL( p.previewUrl );
+        }
+        state.pending = [];
+        if ( state.optionList.length < MIN_OPTIONS ) state.optionList = initialOptions();
+      }
+    },
+    addOption() {
+      if ( state.optionList.length >= MAX_OPTIONS ) return;
+      const i = state.optionList.length + 1;
+      state.optionList.push( newOption( `Option ${ i }` ) );
+    },
+    removeOption() {
+      if ( state.optionList.length <= MIN_OPTIONS ) return;
+      const ctx = getContext();
+      const idx = state.optionList.findIndex( o => o.id === ctx?.option?.id );
+      if ( idx === -1 ) return;
+      state.optionList.splice( idx, 1 );
+    },
+    updateOption( e ) {
+      const ctx = getContext();
+      const opt = state.optionList.find( o => o.id === ctx?.option?.id );
+      if ( opt ) opt.text = e.target.value;
+    },
+    updateClosesAt( e ) { state.closesAt = e.target.value; },
+    toggleAnon( e )     { state.anon     = e.target.checked; },
+
     *submit( e ) {
       e.preventDefault();
       if ( ! state.canSubmit || state.submitting ) return;
@@ -86,10 +142,25 @@ const { state, actions } = store( 'heyfam/composer', {
       state.error      = '';
       const heyfam    = store( 'heyfam' ).state;
 
-      const ready = state.pending.filter( p => p.status === 'ready' );
-      const fd    = new FormData();
+      const fd = new FormData();
       fd.append( 'body', state.body );
-      for ( const p of ready ) fd.append( 'photos[]', p.file, p.name );
+
+      if ( state.pollMode ) {
+        const opts = state.optionList
+          .map( o => o.text.trim() )
+          .filter( Boolean );
+        if ( opts.length < MIN_OPTIONS ) {
+          state.error      = `A poll needs at least ${ MIN_OPTIONS } options.`;
+          state.submitting = false;
+          return;
+        }
+        for ( const o of opts ) fd.append( 'poll_options[]', o );
+        if ( state.closesAt ) fd.append( 'poll_closes_at', state.closesAt );
+        fd.append( 'poll_anon', state.anon ? '1' : '0' );
+      } else {
+        const ready = state.pending.filter( p => p.status === 'ready' );
+        for ( const p of ready ) fd.append( 'photos[]', p.file, p.name );
+      }
 
       try {
         const r = yield fetch( `${ heyfam.apiBase }/${ heyfam.famSlug }/posts`, {
@@ -103,7 +174,11 @@ const { state, actions } = store( 'heyfam/composer', {
         for ( const p of state.pending ) {
           if ( p.previewUrl ) URL.revokeObjectURL( p.previewUrl );
         }
-        state.pending = [];
+        state.pending    = [];
+        state.pollMode   = false;
+        state.optionList = initialOptions();
+        state.closesAt   = '';
+        state.anon       = false;
 
         store( 'heyfam/feed' ).callbacks?.refresh?.( heyfam );
       } catch ( err ) {
