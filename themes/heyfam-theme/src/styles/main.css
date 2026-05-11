@@ -33,6 +33,16 @@ body { font-family: var( --wp--preset--font-family--system ); }
   background: white; cursor: pointer; font: inherit;
 }
 .heyfam-feed__empty { color: #6e655c; }
+.heyfam-post-card__reactions {
+  display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+}
+.heyfam-post-card__permalink {
+  margin-left: auto; color: #b8a98a; text-decoration: none; font-size: 0.85rem;
+}
+.heyfam-post-card__permalink:hover { color: #1f1d1a; }
+.heyfam-post-card .heyfam-comments {
+  border-top: 1px solid #efe7d6; margin-top: 0.4rem; padding-top: 0.75rem;
+}
 
 .heyfam-composer {
   display: grid; gap: 0.5rem; padding: 0.75rem;

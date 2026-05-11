@@ -548,19 +548,11 @@ final class Routes {
 
         $payload = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id ) {
             $post = get_post( $post_id );
-            if ( ! $post ) return null;
-            $comments = get_comments( [ 'post_id' => $post_id, 'orderby' => 'comment_date', 'order' => 'ASC' ] );
-            return [
-                'post'      => self::serialize_post( $post ),
-                'comments'  => array_map( [ self::class, 'serialize_comment' ], $comments ),
-                'reactions' => [
-                    'post' => \HeyFam\Core\Reactions\Manager::counts_for( 'post', $post_id ),
-                ],
-            ];
+            return $post ? self::serialize_post( $post ) : null;
         } );
 
         if ( ! $payload ) return new \WP_REST_Response( [ 'error' => 'not_found' ], 404 );
-        return new \WP_REST_Response( [ 'ok' => true ] + $payload + [ 'now' => gmdate( 'c' ) ], 200 );
+        return new \WP_REST_Response( [ 'ok' => true, 'post' => $payload, 'now' => gmdate( 'c' ) ], 200 );
     }
 
     public function push_subscribe( \WP_REST_Request $request ): \WP_REST_Response {
@@ -634,35 +626,105 @@ final class Routes {
         return new \WP_REST_Response( [ 'ok' => true ], 200 );
     }
 
-    private static function serialize_post( \WP_Post $p ): array {
-        $author = get_userdata( $p->post_author );
-        $thumb  = get_the_post_thumbnail_url( $p, 'large' );
+    /** Max visible nesting depth before comments flatten to one indent with @parent attribution. */
+    public const MAX_VISUAL_DEPTH = 3;
+
+    public static function serialize_post( \WP_Post $p ): array {
+        $author    = get_userdata( $p->post_author );
+        $thumb     = get_the_post_thumbnail_url( $p, 'large' );
+        $reactions = \HeyFam\Core\Reactions\Manager::counts_for( 'post', $p->ID );
         return [
-            'id'          => $p->ID,
-            'body'        => self::plain_text( $p->post_content ),
-            'created_at'  => mysql2date( 'c', $p->post_date_gmt, false ),
-            'author'      => [ 'id' => $p->post_author, 'name' => $author ? $author->display_name : 'Unknown' ],
-            'photo_url'   => $thumb ?: null,
-            'reactions'   => \HeyFam\Core\Reactions\Manager::counts_for( 'post', $p->ID ),
-            'comment_count' => (int) $p->comment_count,
-            'permalink'   => get_permalink( $p ),
+            'id'              => $p->ID,
+            'body'            => self::plain_text( $p->post_content ),
+            'created_at'      => mysql2date( 'c', $p->post_date_gmt, false ),
+            'relative_time'   => self::relative_time( $p->post_date_gmt ),
+            'author'          => [ 'id' => $p->post_author, 'name' => $author ? $author->display_name : 'Unknown' ],
+            'photo_url'       => $thumb ?: null,
+            'reactions'       => $reactions,
+            'reactionEntries' => self::entries( $reactions ),
+            'comment_count'   => (int) $p->comment_count,
+            'permalink'       => get_permalink( $p ),
+            'comments'        => self::decorated_comments_for_post( (int) $p->ID ),
         ];
     }
 
-    private static function serialize_comment( \WP_Comment $c ): array {
-        $avatar = get_avatar_url( (int) $c->user_id, [ 'size' => 64, 'default' => '404' ] );
+    /** DFS-ordered, decorated comment list for a single post. */
+    public static function decorated_comments_for_post( int $post_id ): array {
+        $raw = get_comments( [
+            'post_id' => $post_id,
+            'orderby' => 'comment_date',
+            'order'   => 'ASC',
+            'status'  => 'approve',
+        ] );
+        $byParent = [];
+        foreach ( $raw as $c ) {
+            $byParent[ (int) $c->comment_parent ][] = $c;
+        }
+        $out  = [];
+        $walk = function ( int $parent_id, int $depth, string $parent_name ) use ( &$walk, &$out, $byParent ) {
+            if ( empty( $byParent[ $parent_id ] ) ) return;
+            foreach ( $byParent[ $parent_id ] as $c ) {
+                $out[] = self::serialize_comment( $c, $depth, $parent_name );
+                $walk( (int) $c->comment_ID, $depth + 1, (string) $c->comment_author );
+            }
+        };
+        $walk( 0, 0, '' );
+        return $out;
+    }
+
+    public static function serialize_comment( \WP_Comment $c, int $depth = 0, string $parent_name = '' ): array {
+        $reactions    = \HeyFam\Core\Reactions\Manager::counts_for( 'comment', (int) $c->comment_ID );
+        $visual_depth = min( $depth, self::MAX_VISUAL_DEPTH );
+        $is_deep      = $depth > self::MAX_VISUAL_DEPTH;
+        $user_id      = (int) $c->user_id;
+        $color        = self::avatar_color( $user_id );
+        $name         = (string) $c->comment_author;
+        $initial      = $name !== '' ? mb_strtoupper( mb_substr( $name, 0, 1 ) ) : '?';
         return [
-            'id'         => (int) $c->comment_ID,
-            'parent_id'  => (int) $c->comment_parent,
-            'body'       => self::plain_text( $c->comment_content ),
-            'created_at' => mysql2date( 'c', $c->comment_date_gmt, false ),
-            'author'     => [
-                'id'         => (int) $c->user_id,
-                'name'       => $c->comment_author,
-                'avatar_url' => $avatar ?: null,
-            ],
-            'reactions'  => \HeyFam\Core\Reactions\Manager::counts_for( 'comment', (int) $c->comment_ID ),
+            'id'              => (int) $c->comment_ID,
+            'parent_id'       => (int) $c->comment_parent,
+            'body'            => self::plain_text( $c->comment_content ),
+            'created_at'      => mysql2date( 'c', $c->comment_date_gmt, false ),
+            'author'          => [ 'id' => $user_id, 'name' => $name ],
+            'reactions'       => $reactions,
+            'reactionEntries' => self::entries( $reactions ),
+            'depth'           => $visual_depth,
+            'is_deep'         => $is_deep,
+            'parent_name'     => $is_deep ? $parent_name : '',
+            'relative_time'   => self::relative_time( $c->comment_date_gmt ),
+            'avatar_color'    => $color,
+            'avatar_style'    => "background:$color",
+            'avatar_initial'  => $initial,
         ];
+    }
+
+    private static function entries( array $assoc ): array {
+        $out = [];
+        foreach ( $assoc as $k => $v ) {
+            $out[] = [ $k, $v ];
+        }
+        return $out;
+    }
+
+    private static function avatar_color( int $user_id ): string {
+        $hue = ( $user_id * 137 ) % 360;
+        return "hsl($hue, 60%, 55%)";
+    }
+
+    private static function relative_time( string $mysql_gmt ): string {
+        $then = strtotime( $mysql_gmt . ' UTC' );
+        if ( ! $then ) return '';
+        $diff = time() - $then;
+        if ( $diff < 60 )         return 'now';
+        if ( $diff < 3600 )       return (int) floor( $diff / 60 ) . 'm ago';
+        if ( $diff < 86400 )      return (int) floor( $diff / 3600 ) . 'h ago';
+        if ( $diff < 86400 * 7 )  return (int) floor( $diff / 86400 ) . 'd ago';
+        $months    = [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ];
+        $d         = (int) gmdate( 'j', $then );
+        $m         = $months[ (int) gmdate( 'n', $then ) - 1 ];
+        $y         = (int) gmdate( 'Y', $then );
+        $this_year = (int) gmdate( 'Y' );
+        return $y === $this_year ? "$m $d" : "$m $d, $y";
     }
 
     /** @internal Public only so the integration test can call it directly. */

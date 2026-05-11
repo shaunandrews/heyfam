@@ -36,8 +36,7 @@
     { "name": "header",         "title": "Header",         "area": "header" },
     { "name": "fam-picker",     "title": "Fam Picker",     "area": "uncategorized" },
     { "name": "composer",       "title": "Composer",       "area": "uncategorized" },
-    { "name": "post-card",      "title": "Post Card",      "area": "uncategorized" },
-    { "name": "comment-thread", "title": "Comment Thread", "area": "uncategorized" }
+    { "name": "post-card",      "title": "Post Card",      "area": "uncategorized" }
   ],
   "customTemplates": [
     { "name": "page-feed",    "title": "Fam Feed",        "postTypes": [ "page" ] },

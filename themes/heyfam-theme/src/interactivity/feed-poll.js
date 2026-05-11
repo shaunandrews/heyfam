@@ -1,43 +1,46 @@
 import { store } from '@wordpress/interactivity';
 
+/**
+ * One store, two pages. On the feed page `state.posts` is the full list;
+ * on the single page it's a one-element array. The server pre-decorates
+ * comments (DFS-ordered, with depth/parent_name/etc.), so the client
+ * never has to flatten or shape the payload.
+ */
 const { state } = store( 'heyfam/feed', {
   state: {
-    posts: [],
-    hasPosts: false,
+    posts:     [],
+    hasPosts:  false,
     lastFetch: null,
   },
   actions: {},
   callbacks: {
     *bootstrap() {
       const heyfam = store( 'heyfam' ).state;
-      // Defer to a microtask — at the moment data-wp-init fires, the
-      // per-iteration `data-wp-each` template hasn't fully attached, so a
-      // synchronous state mutation can be lost. Setting state via setTimeout(0)
-      // ensures the binding is live before we mutate.
-      setTimeout( () => {
-        store( 'heyfam/feed' ).callbacks.refresh( heyfam );
-      }, 0 );
+      // Initial state is SSR'd by PHP, so don't re-fetch immediately —
+      // jump straight to the 10s polling loop for live updates.
       setInterval( () => store( 'heyfam/feed' ).callbacks.refresh( heyfam ), 10000 );
     },
     *refresh( heyfam ) {
       if ( ! heyfam.famSlug ) return;
-      // Bail if we're not on the feed page — `reactions.js` calls refresh on
-      // both single+feed stores blindly, so guard against the wasted GET here.
-      if ( ! document.querySelector( '.heyfam-feed__list' ) ) return;
-      // Always fetch the full feed — `since` would only return new POSTS, missing
-      // updated reactions/comment-counts on existing posts. 50-post cap is fine.
-      const r = yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/feed`, {
+      const post_id = currentPostId();
+      const url = post_id
+        ? `${heyfam.apiBase}/${heyfam.famSlug}/post/${post_id}`
+        : `${heyfam.apiBase}/${heyfam.famSlug}/feed`;
+      const r = yield fetch( url, {
         credentials: 'include',
         headers: { 'X-WP-Nonce': heyfam.nonce },
       } );
       if ( ! r.ok ) return;
       const body = yield r.json();
-      state.posts = ( body.posts || [] ).map( ( p ) => ( {
-        ...p,
-        reactionEntries: Object.entries( p.reactions || {} ),
-      } ) );
+      state.posts    = post_id ? ( body.post ? [ body.post ] : [] ) : ( body.posts || [] );
       state.hasPosts = state.posts.length > 0;
       state.lastFetch = body.now;
     },
   },
 } );
+
+/** Returns the WP post id when we're on a singular post page, else 0. */
+function currentPostId() {
+  const m = document.body.className.match( /\bpostid-(\d+)\b/ );
+  return m ? parseInt( m[ 1 ], 10 ) : 0;
+}

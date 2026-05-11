@@ -8,38 +8,7 @@
   <section class="heyfam-feed__list"
            data-wp-interactive="heyfam/feed"
            data-wp-init="callbacks.bootstrap">
-    <template data-wp-each="state.posts">
-      <article class="heyfam-post-card"
-               data-wp-key="context.item.id"
-               data-wp-bind--data-id="context.item.id">
-        <header class="heyfam-post-card__header">
-          <strong data-wp-text="context.item.author.name"></strong>
-          <time data-wp-bind--datetime="context.item.created_at" data-wp-text="context.item.created_at"></time>
-        </header>
-        <div class="heyfam-post-card__body" data-wp-text="context.item.body"></div>
-        <img class="heyfam-post-card__photo"
-             data-wp-bind--src="context.item.photo_url"
-             data-wp-class--is-hidden="!context.item.photo_url" alt="" />
-        <footer class="heyfam-post-card__reactions"
-                data-wp-interactive="heyfam/reactions">
-          <ul class="heyfam-reactions">
-            <template data-wp-each--entry="context.item.reactionEntries">
-              <li>
-                <button data-wp-on--click="actions.toggle">
-                  <span data-wp-text="context.entry.0"></span>
-                  <span data-wp-text="context.entry.1"></span>
-                </button>
-              </li>
-            </template>
-            <li><button data-wp-on--click="actions.openPicker">+</button></li>
-          </ul>
-          <a class="heyfam-post-card__comments"
-             data-wp-bind--href="heyfam/feed::context.item.permalink">
-            <span data-wp-text="heyfam/feed::context.item.comment_count"></span> comments
-          </a>
-        </footer>
-      </article>
-    </template>
+    <!-- wp:template-part {"slug":"post-card"} /-->
     <p class="heyfam-feed__empty" data-wp-class--is-hidden="state.hasPosts">No posts yet — say hey to your fam.</p>
   </section>
   <!-- /wp:html -->

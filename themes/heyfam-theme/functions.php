@@ -54,6 +54,27 @@ add_action( 'wp_enqueue_scripts', static function () {
         'logoutUrl' => is_user_logged_in() ? wp_logout_url( '/' ) : '',
         'devMode'   => ! getenv( 'TWILIO_ACCOUNT_SID' ),
     ] );
+
+    // SSR initial post data for the feed / single page so first paint is instant.
+    if ( ! $is_main && class_exists( '\\HeyFam\\Core\\REST\\Routes' ) ) {
+        if ( is_singular( 'post' ) ) {
+            $post = get_post();
+            if ( $post ) {
+                $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
+                wp_interactivity_state( 'heyfam/feed', [
+                    'posts'    => [ $serialized ],
+                    'hasPosts' => true,
+                ] );
+            }
+        } elseif ( is_front_page() || is_home() || is_page_template( 'templates/page-feed.html' ) ) {
+            $posts = get_posts( [ 'numberposts' => 50, 'orderby' => 'date', 'order' => 'DESC' ] );
+            $serialized = array_map( [ '\\HeyFam\\Core\\REST\\Routes', 'serialize_post' ], $posts );
+            wp_interactivity_state( 'heyfam/feed', [
+                'posts'    => $serialized,
+                'hasPosts' => ! empty( $serialized ),
+            ] );
+        }
+    }
 } );
 
 add_action( 'wp_head', static function () {

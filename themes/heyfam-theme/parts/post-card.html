@@ -1,1 +1,106 @@
-<!-- wp:paragraph --><p>Post card placeholder — see feed template.</p><!-- /wp:paragraph -->
+<!-- wp:html -->
+<template data-wp-each="state.posts" data-wp-each-key="context.item.id">
+  <article class="heyfam-post-card"
+           data-wp-bind--data-id="context.item.id"
+           data-target-type="post">
+
+    <header class="heyfam-post-card__header">
+      <strong data-wp-text="context.item.author.name"></strong>
+      <time class="heyfam-post-card__time"
+            data-wp-bind--datetime="context.item.created_at"
+            data-wp-text="context.item.relative_time"></time>
+    </header>
+
+    <div class="heyfam-post-card__body" data-wp-text="context.item.body"></div>
+
+    <img class="heyfam-post-card__photo"
+         data-wp-bind--src="context.item.photo_url"
+         data-wp-class--is-hidden="!context.item.photo_url" alt="" />
+
+    <footer class="heyfam-post-card__reactions"
+            data-wp-interactive="heyfam/reactions">
+      <ul class="heyfam-reactions">
+        <template data-wp-each--entry="heyfam/feed::context.item.reactionEntries">
+          <li>
+            <button data-wp-on--click="actions.toggle">
+              <span data-wp-text="context.entry.0"></span>
+              <span data-wp-text="context.entry.1"></span>
+            </button>
+          </li>
+        </template>
+        <li><button data-wp-on--click="actions.openPicker">+</button></li>
+      </ul>
+      <a class="heyfam-post-card__permalink"
+         data-wp-bind--href="heyfam/feed::context.item.permalink"
+         title="Link to this post">#</a>
+    </footer>
+
+    <section class="heyfam-comments">
+      <template data-wp-each--comment="heyfam/feed::context.item.comments"
+                data-wp-each-key="context.comment.id">
+        <article class="heyfam-comment"
+                 data-wp-class--heyfam-comment--deep="context.comment.is_deep"
+                 data-wp-bind--data-depth="context.comment.depth"
+                 data-wp-bind--data-id="context.comment.id"
+                 data-target-type="comment">
+          <div class="heyfam-comment__avatar"
+               data-wp-bind--style="context.comment.avatar_style">
+            <span class="heyfam-comment__avatar-initial"
+                  data-wp-text="context.comment.avatar_initial"></span>
+          </div>
+          <div class="heyfam-comment__main">
+            <header class="heyfam-comment__header">
+              <strong data-wp-text="context.comment.author.name"></strong>
+              <span class="heyfam-comment__sep">·</span>
+              <time class="heyfam-comment__time"
+                    data-wp-bind--datetime="context.comment.created_at"
+                    data-wp-text="context.comment.relative_time"></time>
+            </header>
+            <p class="heyfam-comment__attribution"
+               data-wp-class--is-hidden="!context.comment.parent_name">
+              ↳ @<span data-wp-text="context.comment.parent_name"></span>
+            </p>
+            <div class="heyfam-comment__body" data-wp-text="context.comment.body"></div>
+            <footer class="heyfam-comment__footer"
+                    data-wp-interactive="heyfam/reactions">
+              <ul class="heyfam-reactions">
+                <template data-wp-each--entry="heyfam/feed::context.comment.reactionEntries">
+                  <li>
+                    <button data-wp-on--click="actions.toggle">
+                      <span data-wp-text="context.entry.0"></span>
+                      <span data-wp-text="context.entry.1"></span>
+                    </button>
+                  </li>
+                </template>
+                <li><button class="heyfam-comment__react" data-wp-on--click="actions.openPicker">+</button></li>
+              </ul>
+              <button class="heyfam-comment__reply"
+                      data-wp-interactive="heyfam/comments"
+                      data-wp-on--click="actions.reply">Reply</button>
+            </footer>
+
+            <form class="heyfam-comment-form heyfam-comment-form--inline"
+                  data-wp-interactive="heyfam/comments"
+                  data-wp-on--submit="actions.submit">
+              <textarea data-wp-on--input="actions.updateBody"
+                        data-wp-bind--value="state.body"
+                        placeholder="Reply…" rows="2"></textarea>
+              <div class="heyfam-comment-form__actions">
+                <button type="button" data-wp-on--click="actions.cancelReply">Cancel</button>
+                <button type="submit" data-wp-bind--disabled="state.submitting">Send</button>
+              </div>
+            </form>
+          </div>
+        </article>
+      </template>
+
+      <form class="heyfam-comment-form heyfam-comment-form--root"
+            data-wp-interactive="heyfam/comments"
+            data-wp-on--submit="actions.submit">
+        <textarea placeholder="Add a comment…" rows="2"></textarea>
+        <button type="submit" data-wp-bind--disabled="state.submitting">Send</button>
+      </form>
+    </section>
+  </article>
+</template>
+<!-- /wp:html -->
