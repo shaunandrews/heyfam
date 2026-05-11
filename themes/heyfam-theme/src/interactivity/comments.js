@@ -27,7 +27,7 @@ store( 'heyfam/comments', {
       }
       s.composing = id;
       s.body      = '';
-      const form = document.querySelector( `[data-id="${id}"] .heyfam-comment-form--inline` );
+      const form = document.querySelector( `article.heyfam-comment[data-id="${id}"] .heyfam-comment-form--inline` );
       if ( form ) {
         form.classList.add( 'is-open' );
         form.querySelector( 'textarea' )?.focus();

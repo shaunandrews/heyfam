@@ -55,25 +55,32 @@ add_action( 'wp_enqueue_scripts', static function () {
         'devMode'   => ! getenv( 'TWILIO_ACCOUNT_SID' ),
     ] );
 
-    // SSR initial post data for the feed / single page so first paint is instant.
-    if ( ! $is_main && class_exists( '\\HeyFam\\Core\\REST\\Routes' ) ) {
-        if ( is_singular( 'post' ) ) {
-            $post = get_post();
-            if ( $post ) {
-                $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
-                wp_interactivity_state( 'heyfam/feed', [
-                    'posts'    => [ $serialized ],
-                    'hasPosts' => true,
-                ] );
-            }
-        } elseif ( is_front_page() || is_home() || is_page_template( 'templates/page-feed.html' ) ) {
-            $posts = get_posts( [ 'numberposts' => 50, 'orderby' => 'date', 'order' => 'DESC' ] );
-            $serialized = array_map( [ '\\HeyFam\\Core\\REST\\Routes', 'serialize_post' ], $posts );
+} );
+
+// SSR initial post data for the feed / single page so first paint is instant.
+// Hook `wp` (after the main query resolves) so the state is populated before
+// the block tree renders and our render_block filter calls process_directives.
+add_action( 'wp', static function () {
+    if ( is_admin() || ! class_exists( '\\HeyFam\\Core\\REST\\Routes' ) ) return;
+    $is_main = (int) get_current_blog_id() === (int) get_network()->site_id;
+    if ( $is_main ) return;
+
+    if ( is_singular( 'post' ) ) {
+        $post = get_post();
+        if ( $post ) {
+            $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
             wp_interactivity_state( 'heyfam/feed', [
-                'posts'    => $serialized,
-                'hasPosts' => ! empty( $serialized ),
+                'posts'    => [ $serialized ],
+                'hasPosts' => true,
             ] );
         }
+    } elseif ( is_front_page() || is_home() || is_page_template( 'templates/page-feed.html' ) ) {
+        $posts      = get_posts( [ 'numberposts' => 50, 'orderby' => 'date', 'order' => 'DESC' ] );
+        $serialized = array_map( [ '\\HeyFam\\Core\\REST\\Routes', 'serialize_post' ], $posts );
+        wp_interactivity_state( 'heyfam/feed', [
+            'posts'    => $serialized,
+            'hasPosts' => ! empty( $serialized ),
+        ] );
     }
 } );
 
@@ -86,3 +93,17 @@ add_action( 'wp_head', static function () {
 add_action( 'init', static function () {
     add_rewrite_rule( '^p/(\d+)/?$', 'index.php?p=$matches[1]', 'top' );
 } );
+
+// Server-render our IAPI directives (data-wp-each expansion, bind, text, etc.)
+// for any core/html block in the heyfam/feed namespace. Without this, the
+// `<template>` iteration only unfolds after JS hydration, leaving a blank flash.
+add_filter( 'render_block', static function ( $content, $block ) {
+    $name = $block['blockName'] ?? '';
+    if ( $name !== 'core/html' ) {
+        return $content;
+    }
+    if ( ! str_contains( $content, 'data-wp-interactive="heyfam/feed"' ) ) {
+        return $content;
+    }
+    return wp_interactivity_process_directives( $content );
+}, 20, 2 );
