@@ -165,3 +165,17 @@ body { font-family: var( --wp--preset--font-family--system ); }
 .heyfam-account__prefs label { font-size: 0.85rem; }
 
 .is-hidden { display: none !important; }
+
+.heyfam-emoji-picker {
+  --background:        var( --wp--preset--color--surface );
+  --border-color:      #efe7d6;
+  --border-radius:     16px;
+  --button-active-background: #f5efe1;
+  --button-hover-background:  #f9f3e5;
+  --indicator-color:   var( --wp--preset--color--accent );
+  --num-columns:       8;
+  width:               min(360px, calc(100vw - 1rem));
+  height:              400px;
+  box-shadow:          0 12px 32px rgba(31, 29, 26, 0.18);
+  border-radius:       16px;
+}

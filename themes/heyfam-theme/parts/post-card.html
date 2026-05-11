@@ -17,21 +17,20 @@
          data-wp-bind--src="context.item.photo_url"
          data-wp-class--is-hidden="!context.item.photo_url" alt="" />
 
-    <footer class="heyfam-post-card__reactions"
-            data-wp-interactive="heyfam/reactions">
+    <footer class="heyfam-post-card__reactions">
       <ul class="heyfam-reactions">
-        <template data-wp-each--entry="heyfam/feed::context.item.reactionEntries">
+        <template data-wp-each--entry="context.item.reactionEntries">
           <li>
-            <button data-wp-on--click="actions.toggle">
+            <button data-wp-on--click="heyfam/reactions::actions.toggle">
               <span data-wp-text="context.entry.0"></span>
               <span data-wp-text="context.entry.1"></span>
             </button>
           </li>
         </template>
-        <li><button data-wp-on--click="actions.openPicker">+</button></li>
+        <li><button data-wp-on--click="heyfam/reactions::actions.openPicker">+</button></li>
       </ul>
       <a class="heyfam-post-card__permalink"
-         data-wp-bind--href="heyfam/feed::context.item.permalink"
+         data-wp-bind--href="context.item.permalink"
          title="Link to this post">#</a>
     </footer>
 
@@ -61,22 +60,20 @@
               ↳ @<span data-wp-text="context.comment.parent_name"></span>
             </p>
             <div class="heyfam-comment__body" data-wp-text="context.comment.body"></div>
-            <footer class="heyfam-comment__footer"
-                    data-wp-interactive="heyfam/reactions">
+            <footer class="heyfam-comment__footer">
               <ul class="heyfam-reactions">
-                <template data-wp-each--entry="heyfam/feed::context.comment.reactionEntries">
+                <template data-wp-each--entry="context.comment.reactionEntries">
                   <li>
-                    <button data-wp-on--click="actions.toggle">
+                    <button data-wp-on--click="heyfam/reactions::actions.toggle">
                       <span data-wp-text="context.entry.0"></span>
                       <span data-wp-text="context.entry.1"></span>
                     </button>
                   </li>
                 </template>
-                <li><button class="heyfam-comment__react" data-wp-on--click="actions.openPicker">+</button></li>
+                <li><button class="heyfam-comment__react" data-wp-on--click="heyfam/reactions::actions.openPicker">+</button></li>
               </ul>
               <button class="heyfam-comment__reply"
-                      data-wp-interactive="heyfam/comments"
-                      data-wp-on--click="actions.reply">Reply</button>
+                      data-wp-on--click="heyfam/comments::actions.reply">Reply</button>
             </footer>
 
             <form class="heyfam-comment-form heyfam-comment-form--inline"
