@@ -6,10 +6,12 @@ import { store } from '@wordpress/interactivity';
  * comments (DFS-ordered, with depth/parent_name/etc.), so the client
  * never has to flatten or shape the payload.
  */
+// Don't define `posts` / `hasPosts` in initial state — IAPI's `deepMerge`
+// replaces arrays rather than merging, so an empty array here wipes the
+// SSR-injected state. The directives degrade gracefully when those keys
+// are absent (`data-wp-each` bails on undefined iterables).
 const { state } = store( 'heyfam/feed', {
   state: {
-    posts:     [],
-    hasPosts:  false,
     lastFetch: null,
   },
   actions: {},
