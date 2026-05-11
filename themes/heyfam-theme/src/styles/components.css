@@ -549,3 +549,129 @@
 .heyfam-dev button:hover,
 .heyfam-dev a:hover { color: var(--hf-color-accent); }
 .heyfam-dev button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* === Onboarding stepper ============================================
+ * Temporary feature chrome — the design-system pass replaces these
+ * with reusable Stepper / List primitives. Until then, everything
+ * routes through --hf-* tokens to stay theme-aware.
+ * ================================================================== */
+.heyfam-onboarding { padding-block: var(--hf-space-5); }
+
+.heyfam-stepper {
+  display: flex;
+  gap: var(--hf-space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--hf-space-5);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-stepper li {
+  flex: 1;
+  display: grid;
+  gap: var(--hf-space-1);
+  place-items: center;
+  padding: var(--hf-space-2) var(--hf-space-1);
+  border-radius: var(--hf-radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+}
+.heyfam-stepper__num {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: var(--hf-radius-pill);
+  background: var(--hf-color-accent-soft);
+  color: var(--hf-color-fg-muted);
+  font-weight: var(--hf-font-weight-semibold);
+}
+.heyfam-stepper li.is-current {
+  background: var(--hf-color-bg-elev);
+  border-color: var(--hf-color-border);
+  color: var(--hf-color-fg);
+}
+.heyfam-stepper li.is-current .heyfam-stepper__num {
+  background: var(--hf-color-accent);
+  color: var(--hf-color-accent-fg);
+}
+.heyfam-stepper li.is-done .heyfam-stepper__num {
+  background: var(--hf-color-fg-muted);
+  color: var(--hf-color-bg-elev);
+}
+.heyfam-stepper__label { white-space: nowrap; }
+
+/* === Invite step UI =============================================== */
+.heyfam-onboarding__pitch { color: var(--hf-color-fg-muted); }
+
+.heyfam-onboarding__contacts {
+  justify-self: start;
+}
+
+.heyfam-onboarding__parsed {
+  background: var(--hf-color-accent-soft);
+  border-radius: var(--hf-radius-md);
+  padding: var(--hf-space-3);
+}
+.heyfam-onboarding__parsed h3 {
+  margin: 0 0 var(--hf-space-2);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-onboarding__parsed ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--hf-space-1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--hf-font-size-sm);
+}
+.heyfam-onboarding__parsed li.is-invalid { color: var(--hf-color-danger); }
+.heyfam-onboarding__parsed li.is-invalid small { font-style: italic; }
+
+.heyfam-onboarding__invite-actions {
+  display: flex;
+  gap: var(--hf-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--hf-space-2);
+}
+
+/* === Nudge banner ================================================= */
+.heyfam-nudge {
+  display: flex;
+  gap: var(--hf-space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--hf-space-3) var(--hf-space-4);
+  border-radius: var(--hf-radius-md);
+  background: var(--hf-color-accent-soft);
+  border: 1px solid var(--hf-color-border);
+  color: var(--hf-color-fg);
+}
+.heyfam-nudge a { color: var(--hf-color-accent); }
+.heyfam-nudge button {
+  background: transparent;
+  border: 0;
+  font-size: var(--hf-font-size-lg);
+  line-height: 1;
+  color: var(--hf-color-fg-muted);
+  cursor: pointer;
+  padding: var(--hf-space-1) var(--hf-space-2);
+}
+.heyfam-nudge button:hover { color: var(--hf-color-fg); }
+
+/* === Account invite entry ========================================= */
+.heyfam-account__invite {
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  padding: var(--hf-space-4);
+}
+.heyfam-account__invite h2 { margin-top: 0; }
+.heyfam-account__invite-link {
+  display: inline-block;
+  margin-top: var(--hf-space-1);
+  color: var(--hf-color-accent);
+}
