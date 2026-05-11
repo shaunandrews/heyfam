@@ -632,7 +632,7 @@ final class Routes {
         $thumb  = get_the_post_thumbnail_url( $p, 'large' );
         return [
             'id'          => $p->ID,
-            'body'        => $p->post_content,
+            'body'        => self::plain_text( $p->post_content ),
             'created_at'  => mysql2date( 'c', $p->post_date_gmt, false ),
             'author'      => [ 'id' => $p->post_author, 'name' => $author ? $author->display_name : 'Unknown' ],
             'photo_url'   => $thumb ?: null,
@@ -645,11 +645,20 @@ final class Routes {
         return [
             'id'         => (int) $c->comment_ID,
             'parent_id'  => (int) $c->comment_parent,
-            'body'       => $c->comment_content,
+            'body'       => self::plain_text( $c->comment_content ),
             'created_at' => mysql2date( 'c', $c->comment_date_gmt, false ),
             'author'     => [ 'id' => (int) $c->user_id, 'name' => $c->comment_author ],
             'reactions'  => \HeyFam\Core\Reactions\Manager::counts_for( 'comment', (int) $c->comment_ID ),
         ];
+    }
+
+    /**
+     * Strip HTML and decode entities so the body renders cleanly in
+     * `data-wp-text` (which sets textContent). Composer only accepts plain
+     * text + an optional photo today, so we don't lose anything by stripping.
+     */
+    private static function plain_text( string $html ): string {
+        return trim( html_entity_decode( wp_strip_all_tags( $html, true ), ENT_QUOTES, 'UTF-8' ) );
     }
 
     private static function sanitize_emoji( string $raw ): ?string {

@@ -56,6 +56,17 @@ final class FamCreation {
 				update_option( 'page_on_front',  $feed_id );
 			}
 
+			// Delete the WP default "Hello world!" post and its sample comment
+			// so the fam feed starts clean.
+			$defaults = get_posts( [
+				'post_type'   => 'post',
+				'numberposts' => -1,
+				'post_status' => 'any',
+			] );
+			foreach ( $defaults as $default_post ) {
+				wp_delete_post( $default_post->ID, true );
+			}
+
 			// Promote the creator to fam_admin (wpmu_create_blog gives them administrator).
 			$user = new \WP_User( $creator_user_id );
 			$user->set_role( Roles::ADMIN_ROLE );
