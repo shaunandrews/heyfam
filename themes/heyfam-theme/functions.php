@@ -57,15 +57,23 @@ add_action( 'wp_enqueue_scripts', static function () {
     $fam_slug   = trim( $blog->path, '/' );
     $is_main    = (int) get_current_blog_id() === (int) get_network()->site_id;
 
+    $uid                = get_current_user_id();
+    $onboarded_at       = $uid ? (string) get_user_meta( $uid, 'heyfam_onboarded_at', true ) : '';
+    $invites_skipped_at = $uid ? (string) get_user_meta( $uid, 'heyfam_invites_skipped_at', true ) : '';
+    $nudge_dismissed_at = $uid ? (string) get_user_meta( $uid, 'heyfam_invites_nudge_dismissed_at', true ) : '';
+
     wp_interactivity_state( 'heyfam', [
-        'nonce'     => wp_create_nonce( 'wp_rest' ),
-        'famSlug'   => $is_main ? null : $fam_slug,
-        'vapidKey'  => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
-        'apiBase'   => '/wp-json/heyfam/v1',
-        'userId'    => get_current_user_id(),
-        'logoutUrl' => is_user_logged_in() ? wp_logout_url( '/' ) : '',
-        'devMode'   => ! getenv( 'TWILIO_ACCOUNT_SID' ),
-        'devBanner' => ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_user_logged_in() ),
+        'nonce'            => wp_create_nonce( 'wp_rest' ),
+        'famSlug'          => $is_main ? null : $fam_slug,
+        'vapidKey'         => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
+        'apiBase'          => '/wp-json/heyfam/v1',
+        'userId'           => $uid,
+        'logoutUrl'        => is_user_logged_in() ? wp_logout_url( '/' ) : '',
+        'devMode'          => ! getenv( 'TWILIO_ACCOUNT_SID' ),
+        'devBanner'        => ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_user_logged_in() ),
+        'onboardedAt'      => $onboarded_at,
+        'invitesSkippedAt' => $invites_skipped_at,
+        'nudgeDismissedAt' => $nudge_dismissed_at,
     ] );
 
 } );

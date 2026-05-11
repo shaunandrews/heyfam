@@ -11,6 +11,7 @@ const { state, actions } = store( 'heyfam/account', {
     loadError: '',
     pushPermission: initialPushPermission,
     me: { name: '', avatar_url: '', has_uploaded_avatar: false },
+    firstFamInviteHref: '/signup',
     get logoutUrl() {
       return store( 'heyfam' ).state.logoutUrl || '/wp-login.php?action=logout';
     },
@@ -146,6 +147,12 @@ const { state, actions } = store( 'heyfam/account', {
           }
         } ) );
         state.fams = withPrefs;
+        if ( state.fams.length ) {
+          // Point the "Invite more family" link at the first fam. The fam-page
+          // invite sheet hasn't been built yet, so for now we deep-link with a
+          // hash a future view can pick up.
+          state.firstFamInviteHref = state.fams[ 0 ].url + '#invite';
+        }
         state.loading = false;
         recomputeVisibility();
       } catch ( err ) {

@@ -57,6 +57,14 @@
       </section>
     </template>
 
+    <section class="heyfam-account__invite" data-wp-class--is-hidden="!state.fams.length">
+      <h2>Invite more family</h2>
+      <p>Pick a fam, paste numbers, send.</p>
+      <a class="heyfam-account__invite-link" data-wp-bind--href="state.firstFamInviteHref">
+        Invite to your fam →
+      </a>
+    </section>
+
     <section class="heyfam-account__push" data-wp-class--is-hidden="!state.fams.length">
       <h2>Push notifications</h2>
       <p data-wp-class--is-hidden="state.pushNotEnabled">Browser push is off. <button type="button" data-wp-on--click="actions.requestPush">Enable push</button></p>
