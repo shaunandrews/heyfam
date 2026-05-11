@@ -1,5 +1,5 @@
 import { store, getContext } from '@wordpress/interactivity';
-import { acceptable } from '../lib/media.js';
+import { acceptable, isHeic } from '../lib/media.js';
 
 const MAX_FILES = 10;
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB per file before client conversion
@@ -115,8 +115,10 @@ const { state, actions } = store( 'heyfam/composer', {
   },
 } );
 
-function addFiles( files ) {
-  let nextId = ( state.pending[ state.pending.length - 1 ]?.id ?? 0 ) + 1;
+async function addFiles( files ) {
+  const heyfam = store( 'heyfam' ).state;
+  let nextId   = ( state.pending[ state.pending.length - 1 ]?.id ?? 0 ) + 1;
+
   for ( const file of files ) {
     if ( state.pending.length >= MAX_FILES ) {
       state.error = `Max ${ MAX_FILES } photos per post.`;
@@ -131,16 +133,44 @@ function addFiles( files ) {
       continue;
     }
 
+    const heic               = isHeic( file );
+    const needsClientConvert = heic && ! heyfam.heicSupport;
+
     const slot = {
       id:         nextId++,
       file,
       name:       file.name,
-      previewUrl: URL.createObjectURL( file ),
-      status:     'pending',
+      previewUrl: '',
+      status:     needsClientConvert ? 'converting' : 'ready',
     };
+    // Provisional preview from the original file. iOS Safari can render
+    // some HEIC into <img>; on other browsers the preview just stays blank
+    // until the conversion swaps in a JPEG below.
+    try { slot.previewUrl = URL.createObjectURL( file ); } catch {}
     state.pending.push( slot );
 
-    // HEIC handoff is Task 4. For now everything is immediately 'ready'.
-    slot.status = 'ready';
+    if ( needsClientConvert ) {
+      try {
+        const { default: heic2any } = await import( 'heic2any' );
+        const blob = await heic2any( { blob: file, toType: 'image/jpeg', quality: 0.82 } );
+        const out  = Array.isArray( blob ) ? blob[ 0 ] : blob;
+        const converted = new File(
+          [ out ],
+          file.name.replace( /\.(heic|heif)$/i, '.jpg' ),
+          { type: 'image/jpeg' }
+        );
+        const fresh = state.pending.find( p => p.id === slot.id );
+        if ( ! fresh ) continue; // user removed it during conversion
+        if ( fresh.previewUrl ) URL.revokeObjectURL( fresh.previewUrl );
+        fresh.file       = converted;
+        fresh.name       = converted.name;
+        fresh.previewUrl = URL.createObjectURL( converted );
+        fresh.status     = 'ready';
+      } catch ( err ) {
+        const fresh = state.pending.find( p => p.id === slot.id );
+        if ( fresh ) fresh.status = 'error';
+        state.error = 'Could not read HEIC photo. Convert to JPEG and try again.';
+      }
+    }
   }
 }

@@ -787,6 +787,24 @@ final class Routes {
         ], 200 );
     }
 
+    /**
+     * Cheapest probe for whether this server can decode HEIC images.
+     *
+     * WP 6.7+ ships HEIC → JPEG conversion when Imagick has the libheif
+     * delegate. We pre-emptively ask Imagick directly; the answer surfaces
+     * to the client as `heyfam.state.heicSupport` and lets the composer
+     * skip the heavy heic2any fallback when the server can convert.
+     */
+    public static function server_supports_heic(): bool {
+        if ( ! class_exists( 'Imagick' ) ) return false;
+        try {
+            $formats = ( new \Imagick() )->queryFormats( 'HEI*' );
+            return ! empty( $formats );
+        } catch ( \Throwable $e ) {
+            return false;
+        }
+    }
+
     /** Max visible nesting depth before comments flatten to one indent with @parent attribution. */
     public const MAX_VISUAL_DEPTH = 3;
 

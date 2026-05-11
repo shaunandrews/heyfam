@@ -74,6 +74,9 @@ add_action( 'wp_enqueue_scripts', static function () {
         'onboardedAt'      => $onboarded_at,
         'invitesSkippedAt' => $invites_skipped_at,
         'nudgeDismissedAt' => $nudge_dismissed_at,
+        'heicSupport'      => class_exists( '\\HeyFam\\Core\\REST\\Routes' )
+            ? \HeyFam\Core\REST\Routes::server_supports_heic()
+            : false,
     ] );
 
 } );

@@ -7,13 +7,16 @@ import { fileURLToPath } from 'node:url';
 const root    = resolve( dirname( fileURLToPath( import.meta.url ) ), '..' );
 const entry   = `${root}/themes/heyfam-theme/src/interactivity/index.js`;
 const outdir  = `${root}/themes/heyfam-theme/build`;
-const outfile = `${outdir}/index.js`;
 
 mkdirSync( outdir, { recursive: true } );
 
 await build( {
   entryPoints: [ entry ],
-  outfile,
+  outdir,
+  // `splitting: true` is what code-splits `heic2any` into a separate chunk
+  // so its ~430 KB cost lands only on browsers that actually need to convert
+  // HEIC photos client-side. Esbuild requires `format: 'esm'` for splitting.
+  splitting: true,
   bundle: true,
   format: 'esm',
   external: [ '@wordpress/interactivity' ],
