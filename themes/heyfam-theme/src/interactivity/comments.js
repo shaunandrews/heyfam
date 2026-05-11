@@ -5,9 +5,11 @@ store( 'heyfam/comments', {
     composing: 0,   // 0 = top-level composer is the active one; otherwise the parent comment id
     body: '',
     submitting: false,
-    get topLevelHidden() {
-      return this.composing !== 0;
-    },
+    // IAPI directives only react to direct property access. Plain getters
+    // computed off other state aren't picked up at hydration (see account.js),
+    // so `topLevelHidden` is a plain reactive prop that the actions maintain
+    // in lock-step with `composing`.
+    topLevelHidden: false,
   },
   actions: {
     reply() {
@@ -16,11 +18,13 @@ store( 'heyfam/comments', {
       if ( ! id ) return;
       const s = store( 'heyfam/comments' ).state;
       if ( s.composing === id ) {
-        s.composing = 0;
+        s.composing      = 0;
+        s.topLevelHidden = false;
         return;
       }
-      s.composing = id;
-      s.body      = '';
+      s.composing      = id;
+      s.body           = '';
+      s.topLevelHidden = true;
       // Defer focus until after the class binding flips and CSS unhides the form.
       setTimeout( () => {
         const sel = `[data-id="${id}"] .heyfam-comment-form--inline textarea`;
@@ -29,8 +33,9 @@ store( 'heyfam/comments', {
     },
     cancelReply() {
       const s = store( 'heyfam/comments' ).state;
-      s.composing = 0;
-      s.body      = '';
+      s.composing      = 0;
+      s.body           = '';
+      s.topLevelHidden = false;
     },
     updateBody( e ) {
       store( 'heyfam/comments' ).state.body = e.target.value;
@@ -52,8 +57,9 @@ store( 'heyfam/comments', {
           body: JSON.stringify( { post_id, parent_id: s.composing, body: s.body } ),
         } );
         if ( ! r.ok ) throw new Error( 'comment-failed' );
-        s.body      = '';
-        s.composing = 0;
+        s.body           = '';
+        s.composing      = 0;
+        s.topLevelHidden = false;
         store( 'heyfam/single' ).callbacks.refresh( heyfam );
       } catch ( err ) {
         alert( 'Could not comment. Try again.' );
@@ -105,7 +111,10 @@ function decoratePost( post ) {
 
 function decorateComment( c, depth, parentName ) {
   const visualDepth = Math.min( depth, MAX_VISUAL_DEPTH );
-  const isDeep      = depth >= MAX_VISUAL_DEPTH;
+  // Comments at the cap (depth === MAX_VISUAL_DEPTH) still sit visually below
+  // their parent (one indent up), so attribution is redundant. Attribution
+  // kicks in once depth exceeds the cap and the parent shares the same indent.
+  const isDeep      = depth > MAX_VISUAL_DEPTH;
   return {
     ...c,
     depth:           visualDepth,
@@ -122,7 +131,7 @@ function decorateComment( c, depth, parentName ) {
  * Take the flat ASC-by-date list from the server and produce a DFS-ordered
  * flat list where each entry carries:
  *  - `depth`:       visual indent level, capped at MAX_VISUAL_DEPTH
- *  - `is_deep`:     true when actual depth >= MAX_VISUAL_DEPTH
+ *  - `is_deep`:     true when actual depth > MAX_VISUAL_DEPTH (i.e. flattened)
  *  - `parent_name`: parent author name (only when is_deep)
  *
  * Each comment appears immediately after its parent in the output array, so
