@@ -1,12 +1,35 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
-<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-auth"} -->
-<div class="wp-block-group heyfam-auth">
+<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-auth heyfam-onboarding"} -->
+<div class="wp-block-group heyfam-auth heyfam-onboarding">
   <!-- wp:html -->
   <div data-wp-interactive="heyfam/signup" data-wp-init="callbacks.init">
     <h1 data-wp-text="state.title">Start a fam</h1>
 
-    <form data-wp-class--is-hidden="state.phoneFormHidden" data-wp-on--submit="actions.submitPhone">
+    <ol class="heyfam-stepper" aria-label="Signup progress">
+      <li data-wp-class--is-current="state.stepperStep1Current"
+          data-wp-class--is-done="state.stepperStep1Done">
+        <span class="heyfam-stepper__num">1</span>
+        <span class="heyfam-stepper__label">Phone</span>
+      </li>
+      <li data-wp-class--is-current="state.stepperStep2Current"
+          data-wp-class--is-done="state.stepperStep2Done">
+        <span class="heyfam-stepper__num">2</span>
+        <span class="heyfam-stepper__label">Code</span>
+      </li>
+      <li data-wp-class--is-current="state.stepperStep3Current"
+          data-wp-class--is-done="state.stepperStep3Done">
+        <span class="heyfam-stepper__num">3</span>
+        <span class="heyfam-stepper__label">Fam</span>
+      </li>
+      <li data-wp-class--is-current="state.stepperStep4Current"
+          data-wp-class--is-done="state.stepperStep4Done">
+        <span class="heyfam-stepper__num">4</span>
+        <span class="heyfam-stepper__label">Invite</span>
+      </li>
+    </ol>
+
+    <form data-wp-class--is-hidden="state.step1Hidden" data-wp-on--submit="actions.submitPhone">
       <label>Your phone
         <input class="heyfam-input" type="tel" inputmode="tel" autocomplete="tel"
                data-wp-on--input="actions.updatePhone" data-wp-bind--value="state.phone"
@@ -17,20 +40,21 @@
               data-wp-bind--disabled="state.busy">Send code</button>
     </form>
 
-    <form data-wp-class--is-hidden="state.codeFormHidden" data-wp-on--submit="actions.submitCode">
-      <p>We sent a 6-digit code to <strong data-wp-text="state.phone"></strong>. <span class="dev-hint" data-wp-class--is-hidden="!state.devMode">No Twilio configured — use <strong>000000</strong>.</span></p>
+    <form data-wp-class--is-hidden="state.step2Hidden" data-wp-on--submit="actions.submitCode">
+      <p>We sent a 6-digit code to <strong data-wp-text="state.phone"></strong>.
+        <span class="dev-hint" data-wp-class--is-hidden="!state.devMode">No Twilio configured — use <strong>000000</strong>.</span></p>
       <label>Code
         <input class="heyfam-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
                data-wp-on--input="actions.updateCode" data-wp-bind--value="state.code" required />
       </label>
       <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" class="heyfam-button heyfam-button--primary heyfam-button--block"
-              data-wp-bind--disabled="state.busy">Verify</button>
+              data-wp-bind--disabled="state.busy">Next</button>
       <button type="button" class="heyfam-button heyfam-button--ghost"
               data-wp-on--click="actions.backToPhone">Use a different number</button>
     </form>
 
-    <form data-wp-class--is-hidden="state.profileFormHidden" data-wp-on--submit="actions.submitProfile">
+    <form data-wp-class--is-hidden="state.step3Hidden" data-wp-on--submit="actions.submitFam">
       <label>Your name
         <input class="heyfam-input" type="text"
                data-wp-on--input="actions.updateName" data-wp-bind--value="state.name"
@@ -50,6 +74,47 @@
       <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
       <button type="submit" class="heyfam-button heyfam-button--primary heyfam-button--block"
               data-wp-bind--disabled="state.busy">Create fam</button>
+    </form>
+
+    <form data-wp-class--is-hidden="state.step4Hidden" data-wp-on--submit="actions.submitInvites">
+      <p class="heyfam-onboarding__pitch">Invite a few people now so your fam feels alive on day one. Paste numbers, pick from contacts, or skip and add them later.</p>
+
+      <label>Phone numbers
+        <textarea class="heyfam-textarea" rows="5"
+                  data-wp-on--input="actions.updateInviteText" data-wp-bind--value="state.inviteText"
+                  placeholder="+15555550100&#10;+15555550101&#10;+15555550102"></textarea>
+      </label>
+
+      <button type="button" class="heyfam-button heyfam-button--secondary heyfam-onboarding__contacts"
+              data-wp-class--is-hidden="!state.hasContactPicker"
+              data-wp-on--click="actions.pickContacts">Pick from contacts</button>
+
+      <div class="heyfam-onboarding__parsed" data-wp-class--is-hidden="!state.parsedPhones.length">
+        <h3>Will invite</h3>
+        <ul>
+          <template data-wp-each--entry="state.parsedPhonesEntries">
+            <li data-wp-class--is-invalid="!context.entry.1.valid">
+              <span data-wp-text="context.entry.1.e164"></span>
+              <small data-wp-class--is-hidden="context.entry.1.valid"> · invalid</small>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+      <label>Optional note <span class="prefix">(≤120 chars)</span>
+        <input class="heyfam-input" type="text" maxlength="120"
+               data-wp-on--input="actions.updateInviteNote" data-wp-bind--value="state.inviteNote"
+               placeholder="Hey! We're using HeyFam now." />
+      </label>
+
+      <p class="error" data-wp-class--is-hidden="!state.error" data-wp-text="state.error"></p>
+
+      <div class="heyfam-onboarding__invite-actions">
+        <button type="submit" class="heyfam-button heyfam-button--primary"
+                data-wp-bind--disabled="state.busy">Send invites &amp; finish</button>
+        <button type="button" class="heyfam-button heyfam-button--ghost heyfam-onboarding__skip"
+                data-wp-on--click="actions.skipInvites">Skip for now</button>
+      </div>
     </form>
   </div>
   <!-- /wp:html -->
