@@ -1,1 +1,481 @@
-/* HeyFam component library. Populated in Task 3 of the design-system plan. */
+/*
+ * HeyFam component library — vanilla CSS, no preprocessor, no JS.
+ *
+ * Sections:
+ *   - Button
+ *   - Input / Textarea / Label
+ *   - Card
+ *   - Pill / Tag
+ *   - Avatar
+ *   - Spinner
+ *   - EmptyState
+ *   - Toast
+ *   - Modal
+ *   - App-specific re-homes (post-card, comment, composer, fam-picker,
+ *     auth screens, account screen, emoji picker)
+ */
+
+/* --- Button -------------------------------------------------------- */
+.heyfam-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hf-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--hf-radius-pill);
+  padding: var(--hf-space-2) var(--hf-space-4);
+  font: inherit;
+  font-weight: var(--hf-font-weight-medium);
+  line-height: var(--hf-line-height-tight);
+  cursor: pointer;
+  background: transparent;
+  color: var(--hf-color-fg);
+  transition:
+    background-color var(--hf-motion-fast) var(--hf-ease-standard),
+    color            var(--hf-motion-fast) var(--hf-ease-standard),
+    border-color     var(--hf-motion-fast) var(--hf-ease-standard),
+    transform        var(--hf-motion-fast) var(--hf-ease-standard);
+  user-select: none;
+  -webkit-appearance: none;
+}
+.heyfam-button:active { transform: scale(0.97); }
+.heyfam-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.heyfam-button--primary {
+  background: var(--hf-color-accent);
+  color: var(--hf-color-accent-fg);
+}
+.heyfam-button--primary:hover { filter: brightness(0.95); }
+
+.heyfam-button--secondary {
+  background: var(--hf-color-bg-elev);
+  border-color: var(--hf-color-border-strong);
+  color: var(--hf-color-fg);
+}
+.heyfam-button--secondary:hover { border-color: var(--hf-color-fg-muted); }
+
+.heyfam-button--ghost {
+  background: transparent;
+  color: var(--hf-color-fg-muted);
+  padding: var(--hf-space-2) var(--hf-space-3);
+}
+.heyfam-button--ghost:hover { color: var(--hf-color-fg); background: var(--hf-color-accent-soft); }
+
+.heyfam-button--icon {
+  width: 2.25rem; height: 2.25rem; padding: 0;
+  border-radius: var(--hf-radius-pill);
+  background: transparent;
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-button--icon:hover { background: var(--hf-color-accent-soft); color: var(--hf-color-fg); }
+
+.heyfam-button--danger { background: var(--hf-color-danger); color: white; }
+.heyfam-button--block  { width: 100%; }
+
+/* --- Input / Textarea --------------------------------------------- */
+.heyfam-input,
+.heyfam-textarea {
+  font: inherit;
+  width: 100%;
+  padding: var(--hf-space-2) var(--hf-space-3);
+  border: 1px solid var(--hf-color-border-strong);
+  border-radius: var(--hf-radius-md);
+  background: var(--hf-color-bg-elev);
+  color: var(--hf-color-fg);
+  transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
+  -webkit-appearance: none;
+}
+.heyfam-input:focus-visible,
+.heyfam-textarea:focus-visible {
+  outline: none;
+  border-color: var(--hf-color-accent);
+  box-shadow: 0 0 0 var(--hf-focus-width) var(--hf-color-accent-soft);
+}
+.heyfam-textarea { resize: vertical; min-height: 2.5rem; line-height: var(--hf-line-height-normal); }
+.heyfam-input::placeholder,
+.heyfam-textarea::placeholder { color: var(--hf-color-fg-subtle); }
+
+.heyfam-field { display: grid; gap: var(--hf-space-1); }
+.heyfam-field__label {
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-field__hint {
+  font-size: var(--hf-font-size-xs);
+  color: var(--hf-color-fg-subtle);
+}
+.heyfam-field__error {
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-danger);
+  margin: 0;
+}
+
+/* --- Card --------------------------------------------------------- */
+.heyfam-card {
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  padding: var(--hf-space-4);
+  display: grid;
+  gap: var(--hf-space-3);
+}
+.heyfam-card--tight   { padding: var(--hf-space-3); }
+.heyfam-card--elevated{ box-shadow: var(--hf-shadow-md); border-color: transparent; }
+
+/* --- Pill / Tag --------------------------------------------------- */
+.heyfam-pill {
+  display: inline-flex; align-items: center; gap: var(--hf-space-1);
+  padding: 0.15rem var(--hf-space-3);
+  border-radius: var(--hf-radius-pill);
+  border: 1px solid var(--hf-color-border);
+  background: var(--hf-color-bg-elev);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg);
+}
+.heyfam-pill--accent {
+  background: var(--hf-color-accent-soft);
+  border-color: transparent;
+  color: var(--hf-color-fg);
+}
+
+/* --- Avatar ------------------------------------------------------- */
+.heyfam-avatar {
+  width: var(--hf-avatar-size);
+  height: var(--hf-avatar-size);
+  border-radius: 50%;
+  background: var(--hf-color-bg-elev);
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+  /* Outline that survives a transparent SVG background */
+  box-shadow: inset 0 0 0 1px var(--hf-color-border);
+}
+.heyfam-avatar--lg { width: var(--hf-avatar-size-lg); height: var(--hf-avatar-size-lg); }
+.heyfam-avatar--square { border-radius: var(--hf-radius-md); }
+
+/* --- Spinner ------------------------------------------------------ */
+.heyfam-spinner {
+  width: 1.25rem; height: 1.25rem;
+  border: 2px solid var(--hf-color-border);
+  border-top-color: var(--hf-color-accent);
+  border-radius: 50%;
+  animation: heyfam-spin 600ms linear infinite;
+}
+@keyframes heyfam-spin { to { transform: rotate(360deg); } }
+
+/* --- EmptyState --------------------------------------------------- */
+.heyfam-empty-state {
+  text-align: center;
+  padding: var(--hf-space-6) var(--hf-space-4);
+  color: var(--hf-color-fg-muted);
+  display: grid; gap: var(--hf-space-2);
+}
+.heyfam-empty-state__title {
+  font-size: var(--hf-font-size-lg);
+  color: var(--hf-color-fg);
+  font-weight: var(--hf-font-weight-semibold);
+}
+
+/* --- Toast -------------------------------------------------------- */
+.heyfam-toast {
+  position: fixed;
+  left: 50%; bottom: var(--hf-space-5);
+  transform: translateX(-50%);
+  background: var(--hf-color-fg);
+  color: var(--hf-color-bg);
+  padding: var(--hf-space-2) var(--hf-space-4);
+  border-radius: var(--hf-radius-md);
+  box-shadow: var(--hf-shadow-lg);
+  z-index: var(--hf-z-toast);
+  animation: heyfam-toast-in var(--hf-motion-normal) var(--hf-ease-standard) both;
+}
+@keyframes heyfam-toast-in {
+  from { transform: translate(-50%, 12px); opacity: 0; }
+  to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+
+/* --- Modal -------------------------------------------------------- */
+.heyfam-modal {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  padding: var(--hf-space-4);
+  background: rgba(0, 0, 0, 0.5);
+  z-index: var(--hf-z-modal);
+}
+.heyfam-modal__dialog {
+  background: var(--hf-color-bg-elev);
+  border-radius: var(--hf-radius-lg);
+  padding: var(--hf-space-5);
+  max-width: 480px; width: 100%;
+  box-shadow: var(--hf-shadow-lg);
+  display: grid; gap: var(--hf-space-4);
+}
+
+/* ==================================================================
+ * App-specific layouts — refactored onto tokens. Behavior identical.
+ * ================================================================== */
+
+.heyfam-header {
+  padding: var(--hf-space-3) var(--hf-space-4);
+  border-bottom: 1px solid var(--hf-color-border);
+  background: var(--hf-color-bg-elev);
+}
+
+.heyfam-landing { text-align: center; padding-block: var(--hf-space-7); display: grid; gap: var(--hf-space-4); }
+
+.heyfam-feed { display: grid; gap: var(--hf-space-4); padding-block: var(--hf-space-4); }
+
+.heyfam-post-card {
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  padding: var(--hf-space-4);
+  display: grid; gap: var(--hf-space-3);
+}
+.heyfam-post-card__header {
+  display: flex; gap: var(--hf-space-2);
+  align-items: center;
+  color: var(--hf-color-fg-muted);
+  font-size: var(--hf-font-size-sm);
+}
+.heyfam-post-card__header strong {
+  color: var(--hf-color-fg);
+  font-weight: var(--hf-font-weight-semibold);
+}
+.heyfam-post-card__photo { max-width: 100%; border-radius: var(--hf-radius-md); }
+.heyfam-post-card__permalink {
+  margin-left: auto;
+  color: var(--hf-color-fg-subtle);
+  font-size: var(--hf-font-size-sm);
+}
+.heyfam-post-card__reactions {
+  display: flex; gap: var(--hf-space-3); align-items: center; flex-wrap: wrap;
+}
+.heyfam-post-card .heyfam-comments {
+  border-top: 1px solid var(--hf-color-border);
+  margin-top: var(--hf-space-2); padding-top: var(--hf-space-3);
+}
+
+.heyfam-feed__empty { color: var(--hf-color-fg-muted); }
+
+.heyfam-reactions {
+  display: flex; gap: var(--hf-space-2);
+  padding: 0; margin: 0; list-style: none; flex-wrap: wrap;
+}
+.heyfam-reactions button {
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-pill);
+  padding: 0.15rem var(--hf-space-3);
+  background: var(--hf-color-bg-elev);
+  cursor: pointer;
+  font: inherit;
+  transition: background var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-reactions button:hover { background: var(--hf-color-accent-soft); }
+
+.heyfam-composer {
+  display: grid; gap: var(--hf-space-2);
+  padding: var(--hf-space-3);
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+}
+.heyfam-composer textarea {
+  resize: vertical; padding: var(--hf-space-2);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-md);
+  font: inherit;
+  background: var(--hf-color-bg);
+}
+.heyfam-composer__photo {
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+  cursor: pointer;
+}
+.heyfam-composer button {
+  align-self: end;
+  padding: var(--hf-space-2) var(--hf-space-4);
+  border: 0;
+  background: var(--hf-color-accent);
+  color: var(--hf-color-accent-fg);
+  border-radius: var(--hf-radius-pill);
+  cursor: pointer;
+}
+
+.heyfam-fam-picker { position: relative; }
+.heyfam-fam-picker__toggle {
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border-strong);
+  border-radius: var(--hf-radius-md);
+  padding: var(--hf-space-2) var(--hf-space-3);
+  cursor: pointer;
+  font: inherit;
+  color: var(--hf-color-fg);
+}
+.heyfam-fam-picker__menu {
+  position: absolute; right: 0; top: calc(100% + var(--hf-space-1));
+  min-width: 200px;
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border-strong);
+  border-radius: var(--hf-radius-md);
+  padding: var(--hf-space-2);
+  list-style: none;
+  box-shadow: var(--hf-shadow-md);
+  z-index: var(--hf-z-menu);
+}
+.heyfam-fam-picker__menu a {
+  display: block;
+  padding: var(--hf-space-2) var(--hf-space-2);
+  border-radius: var(--hf-radius-sm);
+  text-decoration: none;
+  color: var(--hf-color-fg);
+}
+.heyfam-fam-picker__menu a:hover { background: var(--hf-color-accent-soft); }
+
+.heyfam-single { display: grid; gap: var(--hf-space-4); padding-block: var(--hf-space-4); }
+
+.heyfam-comments {
+  display: grid; gap: var(--hf-space-3);
+  padding-top: var(--hf-space-2);
+}
+
+.heyfam-comment {
+  display: grid;
+  grid-template-columns: var(--hf-avatar-size) 1fr;
+  gap: var(--hf-space-3);
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-md);
+  padding: var(--hf-space-3);
+}
+.heyfam-comment[data-depth="1"] { margin-left: var(--hf-space-5); }
+.heyfam-comment[data-depth="2"] { margin-left: calc(var(--hf-space-5) * 2); }
+.heyfam-comment[data-depth="3"] { margin-left: calc(var(--hf-space-5) * 3); }
+
+.heyfam-comment__main { display: grid; gap: var(--hf-space-1); min-width: 0; }
+.heyfam-comment__header {
+  display: flex; gap: var(--hf-space-2);
+  align-items: baseline;
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-comment__header strong {
+  color: var(--hf-color-fg);
+  font-size: var(--hf-font-size-md);
+  font-weight: var(--hf-font-weight-semibold);
+}
+.heyfam-comment__sep { opacity: 0.5; }
+.heyfam-comment__attribution {
+  margin: 0;
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-comment__body { margin: 0; word-wrap: break-word; }
+
+.heyfam-comment__footer {
+  display: flex; gap: var(--hf-space-3); align-items: center; flex-wrap: wrap;
+}
+.heyfam-comment__reply {
+  background: none; border: 0;
+  padding: 0.15rem var(--hf-space-2);
+  color: var(--hf-color-fg-muted);
+  font: inherit; cursor: pointer;
+}
+.heyfam-comment__reply:hover { color: var(--hf-color-fg); }
+.heyfam-comment__react { font-weight: var(--hf-font-weight-semibold); }
+
+.heyfam-comment-form { display: grid; gap: var(--hf-space-2); }
+.heyfam-comment-form textarea {
+  padding: var(--hf-space-2);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-md);
+  font: inherit; width: 100%;
+  background: var(--hf-color-bg);
+}
+.heyfam-comment-form__actions { display: flex; gap: var(--hf-space-2); justify-content: end; }
+.heyfam-comment-form button {
+  padding: var(--hf-space-2) var(--hf-space-4); border: 0;
+  background: var(--hf-color-accent); color: var(--hf-color-accent-fg);
+  border-radius: var(--hf-radius-pill); cursor: pointer; font: inherit;
+}
+.heyfam-comment-form button[type="button"] {
+  background: transparent; color: var(--hf-color-fg-muted);
+}
+.heyfam-comment-form--inline { display: none; margin-top: var(--hf-space-2); }
+.heyfam-comment-form--inline.is-open { display: grid; }
+.heyfam-comment-form--root { margin-top: var(--hf-space-3); }
+
+/* --- Auth screens ------------------------------------------------- */
+.heyfam-auth { max-width: 420px; padding-block: var(--hf-space-6); display: grid; gap: var(--hf-space-4); }
+.heyfam-auth h1 { margin-bottom: var(--hf-space-2); }
+.heyfam-auth form { display: grid; gap: var(--hf-space-3); }
+.heyfam-auth label {
+  display: grid; gap: var(--hf-space-1);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-auth input[type=tel],
+.heyfam-auth input[type=text] {
+  font: inherit;
+  padding: var(--hf-space-2) var(--hf-space-3);
+  border: 1px solid var(--hf-color-border-strong);
+  border-radius: var(--hf-radius-md);
+  background: var(--hf-color-bg-elev);
+  color: var(--hf-color-fg);
+}
+.heyfam-auth input:focus-visible {
+  outline: var(--hf-focus-width) solid var(--hf-focus-color);
+  outline-offset: var(--hf-focus-offset);
+}
+.heyfam-auth button {
+  font: inherit;
+  padding: var(--hf-space-2) var(--hf-space-4);
+  border: 0;
+  border-radius: var(--hf-radius-pill);
+  background: var(--hf-color-accent);
+  color: var(--hf-color-accent-fg);
+  cursor: pointer;
+  font-weight: var(--hf-font-weight-medium);
+}
+.heyfam-auth button[type=button] {
+  background: transparent;
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-auth .error { color: var(--hf-color-danger); font-size: var(--hf-font-size-sm); margin: 0; }
+.heyfam-auth .prefix { font-size: var(--hf-font-size-sm); color: var(--hf-color-fg-muted); padding-right: var(--hf-space-1); }
+.heyfam-auth .dev-hint { font-size: var(--hf-font-size-sm); color: var(--hf-color-fg-subtle); }
+
+/* --- Account screen ---------------------------------------------- */
+.heyfam-account { display: grid; gap: var(--hf-space-5); padding-block: var(--hf-space-4); }
+.heyfam-account__fam {
+  background: var(--hf-color-bg-elev);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  padding: var(--hf-space-4);
+}
+.heyfam-account__fam h2 { margin-top: 0; margin-bottom: var(--hf-space-3); }
+.heyfam-account__prefs {
+  display: grid; grid-template-columns: 1fr repeat(3, auto);
+  gap: var(--hf-space-1) var(--hf-space-4); align-items: center;
+}
+.heyfam-account__prefs label { font-size: var(--hf-font-size-sm); }
+
+.heyfam-account__avatar {
+  display: flex; gap: var(--hf-space-3); align-items: center;
+}
+.heyfam-account__avatar-actions { display: flex; gap: var(--hf-space-2); }
+
+/* --- Emoji picker (third party) ---------------------------------- */
+.heyfam-emoji-picker {
+  --background:                var(--hf-color-bg-elev);
+  --border-color:              var(--hf-color-border);
+  --border-radius:             var(--hf-radius-lg);
+  --button-active-background:  var(--hf-color-accent-soft);
+  --button-hover-background:   var(--hf-color-accent-soft);
+  --indicator-color:           var(--hf-color-accent);
+  --num-columns:               8;
+  width:                       min(360px, calc(100vw - var(--hf-space-4)));
+  height:                      400px;
+  box-shadow:                  var(--hf-shadow-lg);
+  border-radius:               var(--hf-radius-lg);
+}
