@@ -3,16 +3,37 @@
   "description": "HeyFam — family connection app",
   "type": "project",
   "license": "proprietary",
-  "minimum-stability": "stable",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "repositories": [
-    { "type": "path", "url": "plugins/heyfam-core" }
+    { "type": "path", "url": "plugins/heyfam-core" },
+    { "type": "composer", "url": "https://wpackagist.org" }
   ],
   "require": {
     "shaunandrews/heyfam-core": "*"
   },
+  "require-dev": {
+    "roots/wordpress":          "^6.5",
+    "wp-phpunit/wp-phpunit":    "^6.5",
+    "aaemnnosttv/wp-sqlite-db": "^1.3",
+    "wp-cli/wp-cli-bundle":     "^2.10"
+  },
+  "extra": {
+    "wordpress-install-dir": "vendor/wordpress/wordpress",
+    "installer-paths": {
+      "vendor/{$vendor}/{$name}/": [ "type:wordpress-dropin" ]
+    }
+  },
   "config": {
     "allow-plugins": {
-      "composer/installers": true
+      "composer/installers": true,
+      "roots/wordpress-core-installer": true
     }
+  },
+  "scripts": {
+    "test":     "cd plugins/heyfam-core && ./vendor/bin/phpunit",
+    "test:ms":  "cd plugins/heyfam-core && ./vendor/bin/phpunit -c tests/multisite.xml",
+    "test:js":  "vitest run",
+    "test:e2e": "playwright test"
   }
 }

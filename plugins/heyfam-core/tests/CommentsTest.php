@@ -1,11 +1,9 @@
 <?php
-use PHPUnit\Framework\TestCase;
-
 /**
  * @group integration
  * Run inside a WP test environment where wp_insert_comment + get_comment work.
  */
-final class CommentsTest extends TestCase {
+final class CommentsTest extends \WP_UnitTestCase {
 	private int $post_id;
 	private int $other_post_id;
 	private int $valid_parent_id;

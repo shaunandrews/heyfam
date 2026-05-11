@@ -7,3 +7,12 @@ build/
 .env
 .env.local
 .phpunit.cache/
+coverage/
+tests/.playwright/
+tests/.env.test
+vendor/wordpress/
+plugins/heyfam-core/tests/heyfam_test.sqlite
+plugins/heyfam-core/tests/debug.txt
+plugins/heyfam-core/tests/heyfam_test.sqlite-shm
+plugins/heyfam-core/tests/heyfam_test.sqlite-wal
+wp-content/

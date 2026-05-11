@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="tests/bootstrap.php"
+         xsi:noNamespaceSchemaLocation="../vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="bootstrap.php"
          colors="true"
-         cacheResultFile=".phpunit.cache/test-results"
          convertDeprecationsToExceptions="false">
   <php>
+    <env name="WP_TESTS_MULTISITE" value="1"/>
     <env name="HEYFAM_INVITE_HMAC_SECRET" value="test-secret-for-phpunit"/>
   </php>
   <testsuites>
-    <testsuite name="heyfam">
-      <directory>tests</directory>
-      <exclude>tests/Helpers</exclude>
+    <testsuite name="heyfam-multisite">
+      <directory>.</directory>
+      <exclude>./Helpers</exclude>
     </testsuite>
   </testsuites>
 </phpunit>

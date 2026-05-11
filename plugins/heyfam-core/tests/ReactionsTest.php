@@ -1,18 +1,25 @@
 <?php
 use HeyFam\Core\Reactions\Manager;
-use PHPUnit\Framework\TestCase;
 
 /**
  * @group integration
  * Run inside a WP test environment (wp-env or similar) where switch_to_blog works.
  */
-final class ReactionsTest extends TestCase {
+final class ReactionsTest extends \WP_UnitTestCase {
 	private int $blog_id;
 
 	protected function setUp(): void {
 		parent::setUp();
 		$this->blog_id = (int) get_current_blog_id();
-		Manager::create_table( $this->blog_id );
+		// dbDelta's SHOW-INDEX path doesn't translate cleanly through the SQLite
+		// drop-in on re-runs (the parser returns null for SHOW INDEX FROM and
+		// dbDelta then array_shift()s the null). Create the table once per
+		// process and rely on WP_UnitTestCase's transaction to roll back rows.
+		static $table_ready = false;
+		if ( ! $table_ready ) {
+			Manager::create_table( $this->blog_id );
+			$table_ready = true;
+		}
 	}
 
 	public function test_add_is_idempotent_per_user_per_emoji(): void {
