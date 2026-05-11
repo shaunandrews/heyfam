@@ -9,12 +9,14 @@
 - **PHPUnit:** Use `wp-phpunit/wp-phpunit` (ships the WordPress test framework as a Composer package) + `roots/wordpress` (ships WordPress core) + `aaemnnosttv/wp-sqlite-db` (drop-in SQLite driver) so tests run against the same SQLite-backed WordPress that Studio uses, in-process, with no Docker. A `tests/bootstrap.php` initializes the test env, requires the SQLite drop-in, loads `heyfam-core.php`, and the existing integration tests run against it. Multisite is enabled via `WP_TESTS_MULTISITE`.
 - **JS tests:** Vitest in the repo root, running on the renamed pure-helper modules extracted from the IAPI files. Helpers move from `signup.js`/`login.js`/`feed-poll.js` into `themes/heyfam-theme/src/lib/{phone,slug,time}.js` and are re-imported from their original locations. No code-behavior changes.
 - **E2E:** Playwright in `tests/e2e/` driven against the local Studio site, with `baseURL` read from a `.env.test` file the developer fills once. A `scripts/studio-url.mjs` helper writes the URL automatically from `studio site status --json`.
-- **WP-CLI:** A `HeyFam\Core\Cli\Commands` class registers two `wp heyfam <subcommand>` commands when `defined('WP_CLI')` is true. Both are scoped to the running user / current network where reasonable. `reset-me` requires `--yes` for destructive ops. `seed-demo` creates a fam with N members, M posts, and a handful of comments and reactions, and prints the resulting fam URL.
+- **WP-CLI:** Two `wp heyfam <subcommand>` commands are registered through `HeyFam\Core\Cli\Bootstrap` (the notif-dev plan creates Bootstrap; this plan adds two lines to its constructor). Command logic lives on per-command classes (`ResetMe`, `SeedDemo`) which expose both a static `run()` helper (called from the dev REST routes) and an `__invoke()` WP-CLI entry point. Both are scoped to the running user / current network where reasonable. `reset-me` requires `--yes` for destructive ops. `seed-demo` creates a fam with N members, M posts, and a handful of comments and reactions, and prints the resulting fam URL.
 - **Dev banner:** A small IAPI island registered by the theme when `WP_DEBUG === true`. Renders a fixed bottom-right pill with shortcuts: Reset me / Seed demo / Log out / Open admin. The banner POSTs to dedicated REST routes (gated on `WP_DEBUG` server-side) that wrap the CLI commands — so a designer doesn't need a terminal to reset state.
 
 **Tech Stack:** PHP 8.1+, WordPress 6.5+ (multisite via blueprint, SQLite via the Studio drop-in), Composer (`wp-phpunit`, `roots/wordpress`, `aaemnnosttv/wp-sqlite-db`, already-present `phpunit/phpunit` + `yoast/phpunit-polyfills`), Node 20+, Vitest, Playwright, `@wordpress/interactivity` (existing).
 
 **Reference orchestrator:** `docs/superpowers/orchestrator.md` Section 3.
+
+**Depends on:** None semantically, but the **notif-dev** plan creates `plugins/heyfam-core/src/Cli/Bootstrap.php` and this plan extends it. Both run in **Phase A** in parallel. If notif-dev has not landed when test-infra's CLI tasks (5–6) run, test-infra creates the same file — alphabetize the `WP_CLI::add_command()` list when both plans land. This plan's CLI commands live in the same `Cli/` directory as notif-dev's.
 
 ---
 
@@ -32,7 +34,7 @@
 **Modified:**
 
 - `composer.json` (repo root) — add `wp-phpunit/wp-phpunit`, `roots/wordpress`, `aaemnnosttv/wp-sqlite-db` to `require-dev`; add Composer `installer-paths` so WP installs into `vendor/wordpress/wordpress`; add `scripts.test` shortcut.
-- `plugins/heyfam-core/heyfam-core.php` — boot the `Cli/Commands` registrar when `WP_CLI` is defined.
+- `plugins/heyfam-core/src/Cli/Bootstrap.php` — **modify** (created by the notif-dev plan). Register `wp heyfam reset-me` and `wp heyfam seed-demo` here, alphabetized with the existing `send-test-notification` command. If notif-dev has not landed when this plan reaches Task 5, **create** this file with the alphabetized registration list (notif-dev's later edit will then be a one-line add). The legacy `Cli\Commands::register()` boot from `heyfam-core.php` is no longer needed — Bootstrap.php is constructed from `Plugin::boot()` per notif-dev's plan.
 - `plugins/heyfam-core/phpunit.xml` — point `bootstrap` at the new bootstrap, add a `<group exclude="integration-skip">` placeholder if needed, and add a separate `multisite` testsuite that defines `WP_TESTS_MULTISITE`.
 - `plugins/heyfam-core/src/Plugin.php` — boot the dev REST routes when `WP_DEBUG` is true.
 - `themes/heyfam-theme/functions.php` — when `WP_DEBUG` is true and the user is logged in, surface `state.heyfam.devMode = true` (already does this from absence of `TWILIO_ACCOUNT_SID`; promote it to `state.heyfam.devBanner = true`) and render the dev banner part.
@@ -49,9 +51,8 @@
 - `plugins/heyfam-core/tests/multisite.xml` — phpunit config that enables multisite.
 - `plugins/heyfam-core/tests/Helpers/RestRequest.php` — small helper for dispatching `\WP_REST_Request` instances against the routes class.
 - `plugins/heyfam-core/tests/RestRoutesTest.php` — happy-path tests for `POST /signup/start` (dev mode), `POST /signup/verify`, `POST /fams`, slug validation rejection.
-- `plugins/heyfam-core/src/Cli/Commands.php` — class registering `wp heyfam reset-me` and `wp heyfam seed-demo`.
-- `plugins/heyfam-core/src/Cli/ResetMe.php` — concrete logic for the reset helper (separately importable from REST + CLI).
-- `plugins/heyfam-core/src/Cli/SeedDemo.php` — concrete logic for the seed helper (separately importable).
+- `plugins/heyfam-core/src/Cli/ResetMe.php` — concrete logic for the reset helper (separately importable from REST + CLI). Class also exposes a static `reset_me()` CLI command method invoked by Bootstrap.
+- `plugins/heyfam-core/src/Cli/SeedDemo.php` — concrete logic for the seed helper (separately importable). Also exposes a static `seed_demo()` CLI command method invoked by Bootstrap.
 - `plugins/heyfam-core/src/REST/DevRoutes.php` — REST routes for the dev banner (only registered when `WP_DEBUG`).
 - `themes/heyfam-theme/src/lib/phone.js` — pure `normalizePhone`.
 - `themes/heyfam-theme/src/lib/slug.js` — pure `slugify` plus a re-export of the validator regex used by the JS forms.
@@ -1027,8 +1028,10 @@ git commit -m "e2e: playwright golden-path against local Studio"
 ## Task 5: WP-CLI `reset-me` command
 
 **Files:**
-- Modify: `plugins/heyfam-core/heyfam-core.php`, `plugins/heyfam-core/src/Plugin.php`
-- Create: `plugins/heyfam-core/src/Cli/Commands.php`, `plugins/heyfam-core/src/Cli/ResetMe.php`
+- Modify: `plugins/heyfam-core/src/Cli/Bootstrap.php` (created by notif-dev — extend it here; if absent, create with the alphabetized list described below)
+- Create: `plugins/heyfam-core/src/Cli/ResetMe.php`
+
+> **Cross-plan note:** The notif-dev plan creates `Cli/Bootstrap.php` and instantiates it from `Plugin::boot()`. This plan only adds two `WP_CLI::add_command()` lines to the constructor. The legacy `Cli\Commands::register()` boot from `heyfam-core.php` described in earlier drafts of this plan is **dropped**; Bootstrap owns registration. Keep the command method bodies (`reset_me`, `seed_demo`) on `ResetMe::reset_me` / `SeedDemo::seed_demo` so the responsibilities are split between Bootstrap (registration) and the per-command class (logic + WP-CLI docblock).
 
 - [ ] **Step 1: Create the reset implementation**
 
@@ -1134,27 +1137,11 @@ Notes:
 - "Sole admin" is the natural ownership signal — if Alice created the Smiths fam and is the only `fam_admin`, deleting Alice should delete the Smiths fam (otherwise we'd orphan a fam with no admins). If someone else has been promoted, the fam survives, Alice just leaves.
 - `--delete-user` is opt-in. By default, the user record is kept and only `phone_verified_at` is cleared — so the user can re-onboard from scratch with the same phone number on the next page load.
 
-- [ ] **Step 2: Create the CLI registrar**
+- [ ] **Step 2: Add the WP-CLI command method to `ResetMe`**
 
-`plugins/heyfam-core/src/Cli/Commands.php`:
+Append to `plugins/heyfam-core/src/Cli/ResetMe.php` (inside the `ResetMe` class, after `for_phone()` and `admin_ids_for_blog()`):
 
 ```php
-<?php
-namespace HeyFam\Core\Cli;
-
-/**
- * Registers the `wp heyfam` command tree. Only loaded when WP_CLI is defined.
- *
- *   wp heyfam reset-me        --user=<id>|--phone=<e164>  [--delete-user] [--yes] [--dry-run]
- *   wp heyfam seed-demo       --name=<title> [--slug=<slug>] [--members=N] [--posts=M] [--reset]
- */
-final class Commands {
-    public static function register(): void {
-        if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) return;
-        \WP_CLI::add_command( 'heyfam reset-me',  [ self::class, 'reset_me' ] );
-        \WP_CLI::add_command( 'heyfam seed-demo', [ self::class, 'seed_demo' ] );
-    }
-
     /**
      * ## OPTIONS
      *
@@ -1184,7 +1171,7 @@ final class Commands {
      *     # See what would happen.
      *     wp heyfam reset-me --user=42 --dry-run
      */
-    public static function reset_me( array $args, array $assoc ): void {
+    public function __invoke( array $args, array $assoc ): void {
         $phone   = $assoc['phone'] ?? null;
         $uid_arg = isset( $assoc['user'] ) ? (int) $assoc['user'] : 0;
         $delete  = isset( $assoc['delete-user'] );
@@ -1214,7 +1201,7 @@ final class Commands {
         }
 
         try {
-            $result = ResetMe::run( $target_uid, $delete, $dry );
+            $result = self::run( $target_uid, $delete, $dry );
         } catch ( \Throwable $e ) {
             \WP_CLI::error( $e->getMessage() );
         }
@@ -1228,23 +1215,54 @@ final class Commands {
             $result['user_deleted'] ? 'yes' : 'no'
         ) );
     }
+```
 
-    /** Stub — implemented in Task 6. */
-    public static function seed_demo( array $args, array $assoc ): void {
-        \WP_CLI::error( 'Not yet implemented — see plan task 6.' );
+Note: `ResetMe` keeps the same purpose (logic helper) but gains an `__invoke()` that WP-CLI calls when the class is registered as a command. The static `run()` / `for_phone()` methods remain importable from REST.
+
+- [ ] **Step 3: Wire registration through Bootstrap.php (created by notif-dev)**
+
+Open `plugins/heyfam-core/src/Cli/Bootstrap.php` (created by the notif-dev plan; if it does not exist yet because the plans are landing in parallel, create it now and notif-dev's later patch will add its own line).
+
+**Apply this Edit:** find the `WP_CLI::add_command( 'heyfam send-test-notification', … )` line. Insert these two lines alphabetized into the registration list inside the constructor:
+
+```diff
+ final class Bootstrap {
+     public function __construct() {
+         if ( ! defined( 'WP_CLI' ) || ! \WP_CLI ) return;
++        \WP_CLI::add_command( 'heyfam reset-me',                ResetMe::class );
++        \WP_CLI::add_command( 'heyfam seed-demo',               SeedDemo::class );  // SeedDemo class added in Task 6
+         \WP_CLI::add_command( 'heyfam send-test-notification', SendTestNotificationCommand::class );
+     }
+ }
+```
+
+If notif-dev has not landed yet (Bootstrap.php does not exist), create `plugins/heyfam-core/src/Cli/Bootstrap.php`:
+
+```php
+<?php
+namespace HeyFam\Core\Cli;
+
+/**
+ * Single registration point for all `wp heyfam …` commands. Notif-dev plan
+ * adds `send-test-notification`; test-infra adds `reset-me` and `seed-demo`.
+ * Keep the list alphabetized so merges are clean.
+ */
+final class Bootstrap {
+    public function __construct() {
+        if ( ! defined( 'WP_CLI' ) || ! \WP_CLI ) return;
+        \WP_CLI::add_command( 'heyfam reset-me',  ResetMe::class );
+        \WP_CLI::add_command( 'heyfam seed-demo', SeedDemo::class );  // implementation in Task 6
     }
 }
 ```
 
-- [ ] **Step 3: Wire registration**
-
-Edit `plugins/heyfam-core/heyfam-core.php` — add right above the `register_activation_hook` lines at the bottom:
+Then instantiate it from `Plugin::boot()`:
 
 ```php
-\HeyFam\Core\Cli\Commands::register();
+new \HeyFam\Core\Cli\Bootstrap();
 ```
 
-(Place outside the `plugins_loaded` callback because WP-CLI loads plugins synchronously before `plugins_loaded` fires for command-context invocations, but registering on the main file is the standard pattern.)
+(WP-CLI loads plugins synchronously before `plugins_loaded` fires, so booting from `Plugin::boot()` is correct for command-context invocations. The notif-dev plan already does this for `send-test-notification`.)
 
 - [ ] **Step 4: Test the command**
 
@@ -1263,7 +1281,7 @@ studio wp eval 'echo get_user_meta( get_user_by("login","dummy")->ID, "phone_ver
 - [ ] **Step 5: Commit**
 
 ```bash
-git add plugins/heyfam-core/src/Cli plugins/heyfam-core/heyfam-core.php
+git add plugins/heyfam-core/src/Cli plugins/heyfam-core/src/Plugin.php
 git commit -m "cli: wp heyfam reset-me — purge phone-verified state and sole-admin fams"
 ```
 
@@ -1272,8 +1290,8 @@ git commit -m "cli: wp heyfam reset-me — purge phone-verified state and sole-a
 ## Task 6: WP-CLI `seed-demo` command
 
 **Files:**
-- Modify: `plugins/heyfam-core/src/Cli/Commands.php`
-- Create: `plugins/heyfam-core/src/Cli/SeedDemo.php`
+- Create: `plugins/heyfam-core/src/Cli/SeedDemo.php` (logic + WP-CLI `__invoke`)
+- Bootstrap.php already registers `SeedDemo::class` via Task 5 — no edit needed here
 
 - [ ] **Step 1: Create the seeder**
 
@@ -1406,66 +1424,68 @@ final class SeedDemo {
 }
 ```
 
-- [ ] **Step 2: Wire the CLI handler**
+- [ ] **Step 2: Add the WP-CLI command method to `SeedDemo`**
 
-Replace the stub `seed_demo` in `plugins/heyfam-core/src/Cli/Commands.php` with:
+Append to `plugins/heyfam-core/src/Cli/SeedDemo.php` (inside the `SeedDemo` class, after `ensure_user()`):
 
 ```php
-/**
- * ## OPTIONS
- *
- * [--name=<name>]
- * : Display name for the fam. Default: "Demo Fam".
- *
- * [--slug=<slug>]
- * : URL slug. Default: auto-derived from name.
- *
- * [--members=<n>]
- * : Number of demo members (in addition to the admin). Default: 3.
- *
- * [--posts=<m>]
- * : Number of demo posts. Default: 5.
- *
- * [--reset]
- * : Delete any existing fam at the same slug before creating.
- *
- * ## EXAMPLES
- *
- *     wp heyfam seed-demo --name="The Smiths" --slug=smiths --members=4 --posts=6
- *     wp heyfam seed-demo --reset
- */
-public static function seed_demo( array $args, array $assoc ): void {
-    $slug = $assoc['slug'] ?? \HeyFam\Core\Fams\Slugs::suggest( $assoc['name'] ?? 'Demo Fam' );
+    /**
+     * ## OPTIONS
+     *
+     * [--name=<name>]
+     * : Display name for the fam. Default: "Demo Fam".
+     *
+     * [--slug=<slug>]
+     * : URL slug. Default: auto-derived from name.
+     *
+     * [--members=<n>]
+     * : Number of demo members (in addition to the admin). Default: 3.
+     *
+     * [--posts=<m>]
+     * : Number of demo posts. Default: 5.
+     *
+     * [--reset]
+     * : Delete any existing fam at the same slug before creating.
+     *
+     * ## EXAMPLES
+     *
+     *     wp heyfam seed-demo --name="The Smiths" --slug=smiths --members=4 --posts=6
+     *     wp heyfam seed-demo --reset
+     */
+    public function __invoke( array $args, array $assoc ): void {
+        $slug = $assoc['slug'] ?? \HeyFam\Core\Fams\Slugs::suggest( $assoc['name'] ?? 'Demo Fam' );
 
-    if ( isset( $assoc['reset'] ) ) {
-        $main   = get_network()->site_id;
-        $domain = get_blog_details( $main )->domain;
-        $path   = rtrim( get_blog_details( $main )->path, '/' ) . "/$slug/";
-        $existing = (int) domain_exists( $domain, $path );
-        if ( $existing ) {
-            \WP_CLI::log( "Removing existing fam #$existing at /$slug/" );
-            wpmu_delete_blog( $existing, true );
+        if ( isset( $assoc['reset'] ) ) {
+            $main   = get_network()->site_id;
+            $domain = get_blog_details( $main )->domain;
+            $path   = rtrim( get_blog_details( $main )->path, '/' ) . "/$slug/";
+            $existing = (int) domain_exists( $domain, $path );
+            if ( $existing ) {
+                \WP_CLI::log( "Removing existing fam #$existing at /$slug/" );
+                wpmu_delete_blog( $existing, true );
+            }
         }
-    }
 
-    try {
-        $result = \HeyFam\Core\Cli\SeedDemo::run( $assoc );
-    } catch ( \Throwable $e ) {
-        \WP_CLI::error( $e->getMessage() );
-    }
+        try {
+            $result = self::run( $assoc );
+        } catch ( \Throwable $e ) {
+            \WP_CLI::error( $e->getMessage() );
+        }
 
-    \WP_CLI::success( sprintf(
-        'Seeded fam #%d at %s (admin #%d, %d members, %d posts).',
-        $result['blog_id'],
-        $result['fam_url'],
-        $result['admin_id'],
-        count( $result['member_ids'] ),
-        count( $result['post_ids'] )
-    ) );
-    \WP_CLI::log( "Login URL (admin): {$result['fam_url']}wp-login.php" );
-    \WP_CLI::log( "Demo admin phone:  +15550000001 (dev-mode code: 000000)" );
-}
+        \WP_CLI::success( sprintf(
+            'Seeded fam #%d at %s (admin #%d, %d members, %d posts).',
+            $result['blog_id'],
+            $result['fam_url'],
+            $result['admin_id'],
+            count( $result['member_ids'] ),
+            count( $result['post_ids'] )
+        ) );
+        \WP_CLI::log( "Login URL (admin): {$result['fam_url']}wp-login.php" );
+        \WP_CLI::log( "Demo admin phone:  +15550000001 (dev-mode code: 000000)" );
+    }
 ```
+
+Bootstrap.php already wires `SeedDemo::class` from Task 5 — no further registration changes needed.
 
 - [ ] **Step 3: Smoke test**
 
@@ -1484,7 +1504,7 @@ Should print "Removing existing fam #X at /smoke/" then recreate. Idempotent.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add plugins/heyfam-core/src/Cli/SeedDemo.php plugins/heyfam-core/src/Cli/Commands.php
+git add plugins/heyfam-core/src/Cli/SeedDemo.php plugins/heyfam-core/src/Cli/Bootstrap.php
 git commit -m "cli: wp heyfam seed-demo — create a demo fam end-to-end"
 ```
 
@@ -1769,7 +1789,7 @@ add_filter( 'render_block_core/template-part', static function ( $content, $bloc
 
 - [ ] **Step 8: Add styles**
 
-In `themes/heyfam-theme/src/styles/main.css`, append:
+If the **design-system** plan has landed first (it should — Phase B precedes Phase C, but Phase A of test-infra can run alongside it), append to `themes/heyfam-theme/src/styles/components.css`. If design-system has not yet landed, append to `themes/heyfam-theme/src/styles/main.css` and the design-system pass will migrate these rules into `components.css` when it splits the stylesheet.
 
 ```css
 .heyfam-dev {
@@ -1813,7 +1833,7 @@ Sign in. A small "dev" pill should appear bottom-right on every page. Clicking i
 - [ ] **Step 10: Commit**
 
 ```bash
-git add plugins/heyfam-core/src/REST/DevRoutes.php plugins/heyfam-core/src/Plugin.php plugins/heyfam-core/src/Fams/Invites.php themes/heyfam-theme/src/interactivity/dev-banner.js themes/heyfam-theme/src/interactivity/index.js themes/heyfam-theme/parts/dev-banner.html themes/heyfam-theme/parts/header.html themes/heyfam-theme/functions.php themes/heyfam-theme/src/styles/main.css
+git add plugins/heyfam-core/src/REST/DevRoutes.php plugins/heyfam-core/src/Plugin.php plugins/heyfam-core/src/Fams/Invites.php themes/heyfam-theme/src/interactivity/dev-banner.js themes/heyfam-theme/src/interactivity/index.js themes/heyfam-theme/parts/dev-banner.html themes/heyfam-theme/parts/header.html themes/heyfam-theme/functions.php themes/heyfam-theme/src/styles/components.css
 git commit -m "dev: in-browser banner — reset me, seed demo, log out, open wp-admin"
 ```
 
