@@ -10,6 +10,8 @@
 
 **Reference:** `docs/superpowers/orchestrator.md` Section 1; the file structure mirrors `docs/superpowers/plans/2026-05-11-comments-v1.md`.
 
+**Depends on:** None. Runs solo in **Phase B**, after the Phase A foundation (notif-dev + test-infra) and before all visual/feature plans. This plan is the canonical first refactor of `serialize_post()`, `parts/composer.html`, `parts/post-card.html`, and `themes/heyfam-theme/src/styles/main.css` (it deletes main.css and splits CSS into `tokens.css` + `base.css` + `components.css`). All later visual plans (invite-onboarding, media, polls) rebase additively on this plan's output — they append rules to `components.css` and apply additive Edits to the templates.
+
 ---
 
 ## Preconditions
@@ -1828,6 +1830,7 @@ Run through these in the Studio site after all tasks land:
 
 ## Not in this plan (deferred)
 
+- **Future plans (invite-onboarding, media, polls) append component classes to `components.css`.** This plan creates that file (Task 3) and writes all the foundational rules; later plans add only their feature-specific classes (`.heyfam-stepper`, `.heyfam-gallery`, `.heyfam-poll`, etc.) below the existing block. None of those plans should re-write or delete what landed here.
 - Toast/Modal/EmptyState are defined in CSS but no JS-driven Toast manager is built — first user is the next workstream that needs one (e.g. Onboarding's "skip and invite later" nudge).
 - Real cropping UI for uploaded avatars — v1 uploads use whatever aspect ratio the user picks. `media_handle_sideload` resizes for storage, and `wp_get_attachment_image_url( [ 64, 64 ] )` gives us a thumbnail at render time.
 - Site Editor exposure of the dark-mode palette as a separate style variation — outside scope.
