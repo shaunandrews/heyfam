@@ -5,11 +5,18 @@
     "appearanceTools": true,
     "color": {
       "palette": [
-        { "slug": "bg",       "name": "Background", "color": "#fffaf3" },
-        { "slug": "fg",       "name": "Foreground", "color": "#1f1d1a" },
-        { "slug": "accent",   "name": "Accent",     "color": "#d97706" },
-        { "slug": "muted",    "name": "Muted",      "color": "#7a716a" },
-        { "slug": "surface",  "name": "Surface",    "color": "#fffefb" }
+        { "slug": "bg",          "name": "Background",     "color": "#fffaf3" },
+        { "slug": "bg-elev",     "name": "Background Elev","color": "#fffefb" },
+        { "slug": "fg",          "name": "Foreground",     "color": "#1f1d1a" },
+        { "slug": "fg-muted",    "name": "Foreground Muted","color": "#6e655c" },
+        { "slug": "fg-subtle",   "name": "Foreground Subtle","color": "#b8a98a" },
+        { "slug": "border",      "name": "Border",         "color": "#efe7d6" },
+        { "slug": "border-strong","name": "Border Strong", "color": "#e3dac9" },
+        { "slug": "accent",      "name": "Accent",         "color": "#d97706" },
+        { "slug": "accent-fg",   "name": "Accent FG",      "color": "#ffffff" },
+        { "slug": "accent-soft", "name": "Accent Soft",    "color": "#fef3e2" },
+        { "slug": "danger",      "name": "Danger",         "color": "#b04141" },
+        { "slug": "success",     "name": "Success",        "color": "#3f7a4e" }
       ]
     },
     "typography": {
@@ -21,25 +28,101 @@
         }
       ],
       "fontSizes": [
-        { "slug": "small",  "size": "0.875rem", "name": "Small" },
-        { "slug": "medium", "size": "1rem",     "name": "Medium" },
-        { "slug": "large",  "size": "1.25rem",  "name": "Large" }
+        { "slug": "xs",   "size": "0.75rem",  "name": "Extra Small" },
+        { "slug": "sm",   "size": "0.875rem", "name": "Small" },
+        { "slug": "md",   "size": "1rem",     "name": "Medium" },
+        { "slug": "lg",   "size": "1.125rem", "name": "Large" },
+        { "slug": "xl",   "size": "1.375rem", "name": "Extra Large" },
+        { "slug": "xxl",  "size": "1.75rem",  "name": "Display" }
       ]
     },
-    "layout": { "contentSize": "640px", "wideSize": "960px" }
+    "spacing": {
+      "spacingSizes": [
+        { "slug": "1",  "size": "0.25rem", "name": "1" },
+        { "slug": "2",  "size": "0.5rem",  "name": "2" },
+        { "slug": "3",  "size": "0.75rem", "name": "3" },
+        { "slug": "4",  "size": "1rem",    "name": "4" },
+        { "slug": "5",  "size": "1.5rem",  "name": "5" },
+        { "slug": "6",  "size": "2rem",    "name": "6" },
+        { "slug": "7",  "size": "3rem",    "name": "7" }
+      ],
+      "units": [ "rem", "px", "%" ]
+    },
+    "shadow": {
+      "presets": [
+        { "slug": "sm", "name": "Small",  "shadow": "0 1px 2px rgba(31, 29, 26, 0.05)" },
+        { "slug": "md", "name": "Medium", "shadow": "0 6px 16px rgba(31, 29, 26, 0.06)" },
+        { "slug": "lg", "name": "Large",  "shadow": "0 12px 32px rgba(31, 29, 26, 0.10)" }
+      ]
+    },
+    "layout": { "contentSize": "640px", "wideSize": "960px" },
+    "custom": {
+      "radius": {
+        "sm":   "6px",
+        "md":   "10px",
+        "lg":   "16px",
+        "pill": "999px"
+      },
+      "motion": {
+        "duration": {
+          "fast":   "120ms",
+          "normal": "200ms",
+          "slow":   "320ms"
+        },
+        "easing": {
+          "standard": "cubic-bezier(0.2, 0.0, 0.0, 1.0)",
+          "emphasized": "cubic-bezier(0.2, 0.0, 0.0, 1.0)",
+          "exit":     "cubic-bezier(0.4, 0.0, 1.0, 1.0)"
+        }
+      },
+      "z": {
+        "base":    "1",
+        "elevated":"10",
+        "menu":    "100",
+        "modal":   "1000",
+        "toast":   "1100"
+      },
+      "focusRing": {
+        "color":  "var(--wp--preset--color--accent)",
+        "width":  "2px",
+        "offset": "2px"
+      },
+      "avatar": {
+        "size":      "32px",
+        "size-lg":   "48px"
+      },
+      "lineHeight": {
+        "tight":  "1.15",
+        "normal": "1.5",
+        "loose":  "1.7"
+      },
+      "fontWeight": {
+        "regular": "400",
+        "medium":  "500",
+        "semibold":"600",
+        "bold":    "700"
+      }
+    }
   },
   "styles": {
-    "color": { "background": "var(--wp--preset--color--bg)", "text": "var(--wp--preset--color--fg)" },
-    "typography": { "fontFamily": "var(--wp--preset--font-family--system)", "fontSize": "var(--wp--preset--font-size--medium)" }
+    "color": {
+      "background": "var(--wp--preset--color--bg)",
+      "text":       "var(--wp--preset--color--fg)"
+    },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--system)",
+      "fontSize":   "var(--wp--preset--font-size--md)",
+      "lineHeight": "var(--wp--custom--line-height--normal)"
+    }
   },
   "templateParts": [
-    { "name": "header",         "title": "Header",         "area": "header" },
-    { "name": "fam-picker",     "title": "Fam Picker",     "area": "uncategorized" },
-    { "name": "composer",       "title": "Composer",       "area": "uncategorized" },
-    { "name": "post-card",      "title": "Post Card",      "area": "uncategorized" }
+    { "name": "header",     "title": "Header",     "area": "header" },
+    { "name": "fam-picker", "title": "Fam Picker", "area": "uncategorized" },
+    { "name": "composer",   "title": "Composer",   "area": "uncategorized" },
+    { "name": "post-card",  "title": "Post Card",  "area": "uncategorized" }
   ],
   "customTemplates": [
-    { "name": "page-feed",    "title": "Fam Feed",        "postTypes": [ "page" ] },
-    { "name": "page-account", "title": "Account Settings","postTypes": [ "page" ] }
+    { "name": "page-feed",    "title": "Fam Feed",         "postTypes": [ "page" ] },
+    { "name": "page-account", "title": "Account Settings", "postTypes": [ "page" ] }
   ]
 }
