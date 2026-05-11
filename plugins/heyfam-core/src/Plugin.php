@@ -19,6 +19,15 @@ final class Plugin {
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 		}, 30, 1 );
 
+		// Register custom image sizes used by the in-feed gallery + lightbox.
+		// 720 covers the 2-up tile (and the legacy single photo at 1x); 1600
+		// gives the lightbox a comfortable max without ever serving full-res
+		// iPhone uploads in the feed.
+		add_action( 'init', static function () {
+			add_image_size( 'heyfam-feed-thumb',  720,  720,  false );
+			add_image_size( 'heyfam-feed-large', 1600, 1600, false );
+		}, 5 );
+
 		add_action( 'wp_insert_post', static function ( int $post_id, \WP_Post $post, bool $update ) {
 			if ( $update || $post->post_status !== 'publish' || $post->post_type !== 'post' ) return;
 			\HeyFam\Core\Notifs\FanOut::schedule_post( get_current_blog_id(), $post_id );

@@ -529,10 +529,18 @@ final class Routes {
     public function create_post( \WP_REST_Request $request ): \WP_REST_Response {
         $blog_id = (int) $request->get_param( '_blog_id' );
         $body    = (string) $request->get_param( 'body' );
-        $photo   = $_FILES['photo'] ?? null;
 
-        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $body, $photo ) {
-            return \HeyFam\Core\Posts\Composer::create( get_current_user_id(), $body, $photo );
+        // Prefer the new `photos[]` shape; fall back to the legacy single `photo`.
+        $slots = self::normalize_files_array( $_FILES['photos'] ?? null );
+        if ( empty( $slots ) && isset( $_FILES['photo'] ) ) {
+            $slots = [ $_FILES['photo'] ];
+        }
+
+        // Cap to a sane limit so a thumb fat-finger doesn't upload an album.
+        $slots = array_slice( $slots, 0, 10 );
+
+        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $body, $slots ) {
+            return \HeyFam\Core\Posts\Composer::create( get_current_user_id(), $body, $slots );
         } );
         if ( is_wp_error( $result ) ) {
             return new \WP_REST_Response(
@@ -540,7 +548,34 @@ final class Routes {
                 400
             );
         }
-        return new \WP_REST_Response( [ 'ok' => true, 'post_id' => $result ], 201 );
+        return new \WP_REST_Response( [
+            'ok'             => true,
+            'post_id'        => $result['post_id'],
+            'attachment_ids' => $result['attachment_ids'],
+        ], 201 );
+    }
+
+    /**
+     * Turn the awkward $_FILES['photos'] shape:
+     *   [ 'name' => [a,b], 'tmp_name' => [a,b], ... ]
+     * into a list of per-file slots:
+     *   [ [ 'name'=>a, 'tmp_name'=>a, ... ], [ 'name'=>b, ... ] ]
+     */
+    private static function normalize_files_array( ?array $files ): array {
+        if ( empty( $files ) || ! is_array( $files['name'] ?? null ) ) return [];
+        $count = count( $files['name'] );
+        $out   = [];
+        for ( $i = 0; $i < $count; $i++ ) {
+            if ( ! empty( $files['error'][ $i ] ) ) continue;
+            $out[] = [
+                'name'     => $files['name'][ $i ]     ?? '',
+                'type'     => $files['type'][ $i ]     ?? '',
+                'tmp_name' => $files['tmp_name'][ $i ] ?? '',
+                'error'    => $files['error'][ $i ]    ?? 0,
+                'size'     => $files['size'][ $i ]     ?? 0,
+            ];
+        }
+        return $out;
     }
 
     public function create_comment( \WP_REST_Request $request ): \WP_REST_Response {
