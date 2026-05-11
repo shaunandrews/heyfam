@@ -6,6 +6,7 @@ const { state, actions } = store( 'heyfam/signup', {
     phone: '', code: '', name: '', famName: '', famSlug: '',
     error: '', busy: false,
     title: 'Start a fam',
+    devMode: false,
     // IAPI directives only react to direct property access. Plain getters
     // computed off other state aren't picked up at hydration, so we keep
     // visibility flags as plain reactive props and toggle them in setStage().
@@ -106,6 +107,9 @@ const { state, actions } = store( 'heyfam/signup', {
   },
   callbacks: {
     init() {
+      // Pull devMode from the global heyfam state (set by functions.php when
+      // TWILIO_ACCOUNT_SID is missing). Showed as a hint on the code step.
+      state.devMode = !! store( 'heyfam' ).state.devMode;
       // SSR doesn't render the is-hidden class on these forms. IAPI's hydration
       // skips re-applying class bindings whose initial DOM state matches the
       // proxy. Toggle each flag through its opposite to trip the proxy's

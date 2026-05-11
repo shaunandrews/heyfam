@@ -52,6 +52,7 @@ add_action( 'wp_enqueue_scripts', static function () {
         'apiBase'   => '/wp-json/heyfam/v1',
         'userId'    => get_current_user_id(),
         'logoutUrl' => is_user_logged_in() ? wp_logout_url( '/' ) : '',
+        'devMode'   => ! getenv( 'TWILIO_ACCOUNT_SID' ),
     ] );
 } );
 
