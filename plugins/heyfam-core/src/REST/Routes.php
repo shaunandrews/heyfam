@@ -792,7 +792,8 @@ final class Routes {
 
     public static function serialize_post( \WP_Post $p ): array {
         $author    = get_userdata( $p->post_author );
-        $thumb     = get_the_post_thumbnail_url( $p, 'large' );
+        $thumb     = get_the_post_thumbnail_url( $p, 'heyfam-feed-large' );
+        $images    = self::images_for_post( (int) $p->ID );
         $reactions = \HeyFam\Core\Reactions\Manager::counts_for( 'post', $p->ID );
         return [
             'id'              => $p->ID,
@@ -804,13 +805,56 @@ final class Routes {
                 'name'       => $author ? $author->display_name : 'Unknown',
                 'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( (int) $p->post_author ),
             ],
-            'photo_url'       => $thumb ?: null,
+            // Legacy: first-image URL. Kept during migration so old clients keep working.
+            'photo_url'       => $thumb ?: ( $images[0]['url'] ?? null ),
+            // New: full gallery payload.
+            'images'          => $images,
+            'image_count'     => count( $images ),
             'reactions'       => $reactions,
             'reactionEntries' => self::entries( $reactions ),
             'comment_count'   => (int) $p->comment_count,
             'permalink'       => get_permalink( $p ),
             'comments'        => self::decorated_comments_for_post( (int) $p->ID ),
         ];
+    }
+
+    /**
+     * All attachments hung off this post, ordered by the WP `menu_order` (which
+     * matches upload order by default) then ID. Returns one entry per image
+     * with both feed and lightbox URLs.
+     *
+     * @return array<int, array{ id:int, url:string, thumb_url:string, alt:string, width:int, height:int }>
+     */
+    private static function images_for_post( int $post_id ): array {
+        $attachments = get_children( [
+            'post_parent'    => $post_id,
+            'post_type'      => 'attachment',
+            'post_mime_type' => 'image',
+            'orderby'        => 'menu_order ID',
+            'order'          => 'ASC',
+            'numberposts'    => 20,
+        ] );
+        if ( ! $attachments ) return [];
+
+        $out = [];
+        foreach ( $attachments as $att ) {
+            $id        = (int) $att->ID;
+            $large     = wp_get_attachment_image_src( $id, 'heyfam-feed-large' );
+            $thumb     = wp_get_attachment_image_src( $id, 'heyfam-feed-thumb' );
+            $full      = wp_get_attachment_image_src( $id, 'full' );
+            $url       = $large[0] ?? $full[0] ?? '';
+            $thumb_url = $thumb[0] ?? $url;
+            if ( ! $url ) continue;
+            $out[] = [
+                'id'        => $id,
+                'url'       => $url,
+                'thumb_url' => $thumb_url,
+                'alt'       => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
+                'width'     => (int) ( $large[1] ?? $full[1] ?? 0 ),
+                'height'    => (int) ( $large[2] ?? $full[2] ?? 0 ),
+            ];
+        }
+        return $out;
     }
 
     /** DFS-ordered, decorated comment list for a single post. */

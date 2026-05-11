@@ -65,6 +65,42 @@ final class MediaTest extends \WP_UnitTestCase {
         $this->assertSame( 'empty_post', $result->get_error_code() );
     }
 
+    public function test_serialize_post_exposes_images_array(): void {
+        $user_id = self::factory()->user->create( [ 'role' => 'editor' ] );
+        wp_set_current_user( $user_id );
+
+        $files  = [ $this->fixture( 'a.jpg' ), $this->fixture( 'b.jpg' ) ];
+        $result = \HeyFam\Core\Posts\Composer::create( $user_id, 'with images', $files );
+        $this->assertIsArray( $result );
+
+        $post       = get_post( $result['post_id'] );
+        $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
+
+        $this->assertArrayHasKey( 'images',      $serialized );
+        $this->assertArrayHasKey( 'image_count', $serialized );
+        $this->assertArrayHasKey( 'photo_url',   $serialized );
+        $this->assertSame( 2, $serialized['image_count'] );
+        $this->assertCount( 2, $serialized['images'] );
+        $this->assertArrayHasKey( 'id',        $serialized['images'][0] );
+        $this->assertArrayHasKey( 'url',       $serialized['images'][0] );
+        $this->assertArrayHasKey( 'thumb_url', $serialized['images'][0] );
+        // photo_url stays non-null for backwards compatibility.
+        $this->assertNotNull( $serialized['photo_url'] );
+    }
+
+    public function test_serialize_post_text_only_has_empty_images(): void {
+        $user_id = self::factory()->user->create( [ 'role' => 'editor' ] );
+        wp_set_current_user( $user_id );
+
+        $result     = \HeyFam\Core\Posts\Composer::create( $user_id, 'no photos', [] );
+        $post       = get_post( $result['post_id'] );
+        $serialized = \HeyFam\Core\REST\Routes::serialize_post( $post );
+
+        $this->assertSame( 0, $serialized['image_count'] );
+        $this->assertSame( [], $serialized['images'] );
+        $this->assertNull( $serialized['photo_url'] );
+    }
+
     private function fixture( string $name ): array {
         $src = __DIR__ . '/fixtures/' . $name;
         if ( ! file_exists( $src ) ) {
