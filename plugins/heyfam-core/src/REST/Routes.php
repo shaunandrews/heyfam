@@ -63,10 +63,19 @@ final class Routes {
             'methods'             => 'POST',
             'permission_callback' => [ $this, 'require_fam_cap_invite' ],
             'args'                => [
-                'phones'       => [ 'required' => true,  'type' => 'array' ],
+                // Legacy callers send `phones`; new clients send a unified
+                // `recipients` array of phone-or-email strings.
+                'phones'       => [ 'required' => false, 'type' => 'array' ],
+                'recipients'   => [ 'required' => false, 'type' => 'array' ],
                 'message_note' => [ 'required' => false, 'type' => 'string' ],
             ],
             'callback'            => [ $this, 'invite_issue' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/invite-link', [
+            'methods'             => 'GET',
+            'permission_callback' => [ $this, 'require_fam_cap_invite' ],
+            'callback'            => [ $this, 'invite_link_get' ],
         ] );
 
         register_rest_route( 'heyfam/v1', '/invites/accept', [
@@ -159,6 +168,25 @@ final class Routes {
             'callback'            => [ $this, 'single_post' ],
         ] );
 
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/post/(?P<id>\d+)', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => $this->require_post_owner( $r ),
+            'args'                => [
+                'body'                    => [ 'required' => false, 'type' => 'string' ],
+                'poll_options'            => [ 'required' => false, 'type' => 'array' ],
+                'poll_closes_at'          => [ 'required' => false, 'type' => 'string' ],
+                'poll_anon'               => [ 'required' => false, 'type' => 'boolean' ],
+                'remove_attachment_ids'   => [ 'required' => false, 'type' => 'array' ],
+            ],
+            'callback'            => [ $this, 'update_post' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/post/(?P<id>\d+)', [
+            'methods'             => 'DELETE',
+            'permission_callback' => fn( $r ) => $this->require_post_owner( $r ),
+            'callback'            => [ $this, 'delete_post' ],
+        ] );
+
         register_rest_route( 'heyfam/v1', '/push/subscribe', [
             'methods'             => 'POST',
             'permission_callback' => static fn() => is_user_logged_in(),
@@ -201,6 +229,13 @@ final class Routes {
             'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
             'args'                => [ 'prefs' => [ 'required' => true, 'type' => 'object' ] ],
             'callback'            => [ $this, 'set_prefs' ],
+        ] );
+
+        register_rest_route( 'heyfam/v1', '/(?P<fam>[a-z0-9-]+)/name', [
+            'methods'             => 'POST',
+            'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'read' ),
+            'args'                => [ 'name' => [ 'required' => true, 'type' => 'string' ] ],
+            'callback'            => [ $this, 'set_fam_name' ],
         ] );
 
         register_rest_route( 'heyfam/v1', '/me/fams', [
@@ -385,8 +420,13 @@ final class Routes {
 
     public function invite_issue( \WP_REST_Request $request ): \WP_REST_Response {
         $blog_id = (int) $request->get_param( '_blog_id' );
-        $phones  = array_filter( array_map( [ $this, 'normalize_phone' ], (array) $request->get_param( 'phones' ) ) );
-        if ( ! $phones ) return new \WP_REST_Response( [ 'error' => 'no_valid_phones' ], 400 );
+
+        // Accept either legacy `phones` array or new mixed `recipients` array.
+        $raw_recipients = (array) $request->get_param( 'recipients' );
+        $raw_phones     = (array) $request->get_param( 'phones' );
+        $entries        = array_merge( $raw_recipients, $raw_phones );
+        $entries        = array_values( array_filter( array_map( 'trim', array_map( 'strval', $entries ) ), 'strlen' ) );
+        if ( ! $entries ) return new \WP_REST_Response( [ 'error' => 'no_recipients' ], 400 );
 
         $note = trim( (string) ( $request->get_param( 'message_note' ) ?? '' ) );
         $note = wp_strip_all_tags( $note, true );
@@ -396,26 +436,62 @@ final class Routes {
 
         switch_to_blog( $blog_id );
         try {
-            $issued = [];
-            $blog   = get_blog_details( $blog_id );
-            foreach ( $phones as $phone ) {
+            $issued       = [];
+            $skipped      = [];
+            $blog         = get_blog_details( $blog_id );
+            $inviter_name = wp_get_current_user()->display_name;
+            $open_code    = \HeyFam\Core\Fams\OpenInvites::get_or_create( $blog_id );
+            $open_url     = home_url( '/i/' . rawurlencode( $open_code ) );
+
+            foreach ( $entries as $entry ) {
+                if ( is_email( $entry ) ) {
+                    $subject = sprintf( '%s invited you to %s', $inviter_name, $blog->blogname );
+                    $body    = sprintf(
+                        '<p><strong>%s</strong> invited you to join <strong>%s</strong>.</p>'
+                        . '<p><a href="%s">Tap here to join</a> — the link works on any device.</p>'
+                        . ( $note !== '' ? '<blockquote>%s</blockquote>' : '%s' ),
+                        esc_html( $inviter_name ), esc_html( $blog->blogname ),
+                        esc_url( $open_url ),
+                        $note !== '' ? esc_html( $note ) : ''
+                    );
+                    $ok = \HeyFam\Core\Notifs\Email::send_to_address( $entry, $subject, $body );
+                    $issued[] = [ 'recipient' => $entry, 'channel' => 'email', 'sent' => $ok ];
+                    continue;
+                }
+
+                $phone = $this->normalize_phone( $entry );
+                if ( ! $phone ) {
+                    $skipped[] = [ 'recipient' => $entry, 'reason' => 'invalid' ];
+                    continue;
+                }
+
                 $code = \HeyFam\Core\Fams\Invites::issue( $blog_id, get_current_user_id(), $phone );
                 $url  = home_url( '/i/' . rawurlencode( $code ) );
-                $name = wp_get_current_user()->display_name;
-                $base = sprintf( '%s invited you to %s — tap to join: %s', $name, $blog->blogname, $url );
+                $base = sprintf( '%s invited you to %s — tap to join: %s', $inviter_name, $blog->blogname, $url );
                 $msg  = $note !== '' ? $base . ' (' . $note . ')' : $base;
-                // Notifs\SMS::send() lands in Task 27. Until then, log so we can copy/paste the link in dev.
                 if ( class_exists( '\\HeyFam\\Core\\Notifs\\SMS' ) ) {
                     \HeyFam\Core\Notifs\SMS::send( $phone, $msg );
                 } else {
                     error_log( "[heyfam] SMS to $phone: $msg" );
                 }
-                $issued[] = [ 'phone' => $phone, 'sent' => true ];
+                $issued[] = [ 'recipient' => $phone, 'channel' => 'sms', 'sent' => true ];
             }
         } finally {
             restore_current_blog();
         }
-        return new \WP_REST_Response( [ 'ok' => true, 'issued' => $issued ], 200 );
+        return new \WP_REST_Response( [ 'ok' => true, 'issued' => $issued, 'skipped' => $skipped ], 200 );
+    }
+
+    public function invite_link_get( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        switch_to_blog( $blog_id );
+        try {
+            $code = \HeyFam\Core\Fams\OpenInvites::get_or_create( $blog_id );
+            $url  = home_url( '/i/' . rawurlencode( $code ) );
+        } finally {
+            restore_current_blog();
+        }
+        return new \WP_REST_Response( [ 'url' => $url, 'code' => $code ], 200 );
     }
 
     public function invite_accept( \WP_REST_Request $request ): \WP_REST_Response {
@@ -425,10 +501,25 @@ final class Routes {
             return new \WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
         }
 
-        // Logged-in fast path — used when the inviter sent the link to a phone
-        // that already belongs to a HeyFam account; the user just needs to join.
+        // Open-invite (link/email/QR/share) fast path: code is reusable and not
+        // bound to a phone. The fam is identified by which blog's open-code matches.
+        $open_blog_id = \HeyFam\Core\Fams\OpenInvites::resolve_blog( $code );
+
+        // Logged-in fast path — for either an open invite or a phone-bound code
+        // sent to a phone that already belongs to a HeyFam account.
         if ( is_user_logged_in() && $sms_code === '' ) {
-            $user_id    = get_current_user_id();
+            $user_id = get_current_user_id();
+            if ( $open_blog_id ) {
+                \HeyFam\Core\Fams\Membership::add( $user_id, $open_blog_id );
+                $blog = get_blog_details( $open_blog_id );
+                return new \WP_REST_Response( [
+                    'ok'      => true,
+                    'blog_id' => $open_blog_id,
+                    'slug'    => trim( $blog->path, '/' ),
+                    'url'     => $blog->siteurl,
+                    'nonce'   => wp_create_nonce( 'wp_rest' ),
+                ], 200 );
+            }
             $user_phone = (string) get_user_meta( $user_id, 'phone_e164', true );
             if ( ! $user_phone ) {
                 return new \WP_REST_Response( [ 'error' => 'no_user_phone' ], 400 );
@@ -477,15 +568,19 @@ final class Routes {
             return new \WP_REST_Response( [ 'error' => 'bad_code' ], 401 );
         }
 
-        // Find which fam this code belongs to by scanning each site (rare path).
+        // Find which fam this code belongs to.
         $blog_id = null;
-        $row     = null;
-        foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
-            $candidate = \HeyFam\Core\Fams\Invites::accept( (int) $site->blog_id, $code, $phone );
-            if ( $candidate ) {
-                $blog_id = (int) $site->blog_id;
-                $row     = $candidate;
-                break;
+        if ( $open_blog_id ) {
+            // Open invite — the phone the user just verified is their own; the invite
+            // isn't tied to it. We use that phone purely for account identity below.
+            $blog_id = $open_blog_id;
+        } else {
+            foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
+                $candidate = \HeyFam\Core\Fams\Invites::accept( (int) $site->blog_id, $code, $phone );
+                if ( $candidate ) {
+                    $blog_id = (int) $site->blog_id;
+                    break;
+                }
             }
         }
         if ( ! $blog_id ) return new \WP_REST_Response( [ 'error' => 'invalid_or_expired' ], 410 );
@@ -710,6 +805,76 @@ final class Routes {
         return new \WP_REST_Response( [ 'ok' => true, 'post' => $payload, 'now' => gmdate( 'c' ) ], 200 );
     }
 
+    /**
+     * Permission gate for post mutation routes (update/delete).
+     * The user must be the post author, in the fam blog. We piggyback on
+     * `require_cap( 'read' )` to resolve the fam slug → blog_id and confirm
+     * membership, then check authorship inside that blog.
+     */
+    public function require_post_owner( \WP_REST_Request $request ): bool {
+        if ( ! \HeyFam\Core\Auth\Authorization::require_cap( $request, 'read' ) ) return false;
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $post_id = (int) $request->get_param( 'id' );
+        if ( ! $post_id ) return false;
+        return (bool) \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id ) {
+            $post = get_post( $post_id );
+            return $post && (int) $post->post_author === get_current_user_id();
+        } );
+    }
+
+    public function update_post( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $post_id = (int) $request->get_param( 'id' );
+        $body    = (string) ( $request->get_param( 'body' ) ?? '' );
+
+        $slots = self::normalize_files_array( $_FILES['photos'] ?? null );
+        $slots = array_slice( $slots, 0, 10 );
+
+        $poll = null;
+        $opts = $request->get_param( 'poll_options' );
+        if ( is_array( $opts ) && count( $opts ) >= 2 ) {
+            $poll = [
+                'options'   => $opts,
+                'closes_at' => (string) ( $request->get_param( 'poll_closes_at' ) ?? '' ),
+                'anon'      => (bool) $request->get_param( 'poll_anon' ),
+            ];
+        }
+
+        $remove_ids = (array) ( $request->get_param( 'remove_attachment_ids' ) ?? [] );
+
+        $result = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id, $body, $slots, $poll, $remove_ids ) {
+            return \HeyFam\Core\Posts\Composer::update( $post_id, $body, $slots, $poll, $remove_ids );
+        } );
+
+        if ( is_wp_error( $result ) ) {
+            return new \WP_REST_Response(
+                [ 'error' => $result->get_error_code(), 'message' => $result->get_error_message() ],
+                400
+            );
+        }
+
+        // Echo the freshly-serialized post so the client can re-render without
+        // waiting on the next feed-refresh tick.
+        $serialized = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id ) {
+            $post = get_post( $post_id );
+            return $post ? self::serialize_post( $post ) : null;
+        } );
+
+        return new \WP_REST_Response( [ 'ok' => true, 'post' => $serialized ] + $result, 200 );
+    }
+
+    public function delete_post( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $post_id = (int) $request->get_param( 'id' );
+
+        $ok = \HeyFam\Core\Auth\Authorization::in_blog( $blog_id, function () use ( $post_id ) {
+            return \HeyFam\Core\Posts\Composer::delete( $post_id );
+        } );
+
+        if ( ! $ok ) return new \WP_REST_Response( [ 'error' => 'delete_failed' ], 400 );
+        return new \WP_REST_Response( [ 'ok' => true, 'post_id' => $post_id ], 200 );
+    }
+
     public function push_subscribe( \WP_REST_Request $request ): \WP_REST_Response {
         \HeyFam\Core\Notifs\Push::upsert(
             get_current_user_id(),
@@ -779,6 +944,21 @@ final class Routes {
         $prefs   = (array) $request->get_param( 'prefs' );
         \HeyFam\Core\Notifs\Prefs::set( get_current_user_id(), $blog_id, $prefs );
         return new \WP_REST_Response( [ 'ok' => true ], 200 );
+    }
+
+    public function set_fam_name( \WP_REST_Request $request ): \WP_REST_Response {
+        $blog_id = (int) $request->get_param( '_blog_id' );
+        $name    = trim( sanitize_text_field( (string) $request->get_param( 'name' ) ) );
+        if ( $name === '' ) {
+            return new \WP_REST_Response( [ 'error' => 'name_required' ], 400 );
+        }
+        if ( mb_strlen( $name ) > 60 ) {
+            $name = mb_substr( $name, 0, 60 );
+        }
+        switch_to_blog( $blog_id );
+        update_option( 'blogname', $name );
+        restore_current_blog();
+        return new \WP_REST_Response( [ 'ok' => true, 'name' => $name ], 200 );
     }
 
     public function me_get(): \WP_REST_Response {
@@ -870,11 +1050,14 @@ final class Routes {
             'images'          => $images,
             'image_count'     => count( $images ),
             'reactions'       => $reactions,
-            'reactionEntries' => self::entries( $reactions ),
+            'reactionEntries' => self::reaction_entries( 'post', (int) $p->ID ),
             'comment_count'   => (int) $p->comment_count,
             'permalink'       => get_permalink( $p ),
             'comments'        => self::decorated_comments_for_post( (int) $p->ID ),
             'poll'            => self::serialize_poll( (int) $p->ID ),
+            // is_mine drives the per-post action menu in the client.
+            'is_mine'         => get_current_user_id() === (int) $p->post_author,
+            'menuOpen'        => false,
         ];
     }
 
@@ -1004,7 +1187,7 @@ final class Routes {
                 'avatar_url' => \HeyFam\Core\Avatars\Avatar::url_for_user( $user_id ),
             ],
             'reactions'       => $reactions,
-            'reactionEntries' => self::entries( $reactions ),
+            'reactionEntries' => self::reaction_entries( 'comment', (int) $c->comment_ID ),
             'depth'           => $visual_depth,
             'is_deep'         => $is_deep,
             'parent_name'     => $is_deep ? $parent_name : '',
@@ -1012,10 +1195,34 @@ final class Routes {
         ];
     }
 
-    private static function entries( array $assoc ): array {
+    /**
+     * Per-emoji breakdown of reactions for a target, with reactor names and
+     * a `mine` flag for the current user. Drives the chip UI + tooltip.
+     */
+    private static function reaction_entries( string $target_type, int $target_id ): array {
+        $rows    = \HeyFam\Core\Reactions\Manager::rows_for( $target_type, $target_id );
+        $current = get_current_user_id();
+        $groups  = [];
+        foreach ( $rows as $r ) {
+            $emoji = $r['emoji'];
+            $uid   = (int) $r['user_id'];
+            if ( ! isset( $groups[ $emoji ] ) ) {
+                $groups[ $emoji ] = [ 'users' => [], 'mine' => false ];
+            }
+            $u = get_userdata( $uid );
+            $groups[ $emoji ]['users'][] = $u ? $u->display_name : 'Someone';
+            if ( $current && $uid === $current ) {
+                $groups[ $emoji ]['mine'] = true;
+            }
+        }
         $out = [];
-        foreach ( $assoc as $k => $v ) {
-            $out[] = [ $k, $v ];
+        foreach ( $groups as $emoji => $g ) {
+            $out[] = [
+                'emoji'      => $emoji,
+                'count'      => count( $g['users'] ),
+                'users_text' => implode( ', ', $g['users'] ),
+                'mine'       => $g['mine'],
+            ];
         }
         return $out;
     }

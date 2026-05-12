@@ -96,6 +96,149 @@ final class Composer {
 		];
 	}
 
+	/**
+	 * Update an existing post. Mirrors `create()` semantics:
+	 *  - `$body` replaces post_content.
+	 *  - `$photos` are *additional* uploads to attach (existing ones are kept).
+	 *  - `$remove_attachment_ids` removes specific existing image attachments.
+	 *  - `$poll`, if present, replaces poll meta (question is `$body`).
+	 *
+	 * Caller must verify ownership/permission before calling.
+	 *
+	 * @return array{ post_id:int, added_attachment_ids:int[], removed_attachment_ids:int[] }|\WP_Error
+	 */
+	public static function update( int $post_id, string $body, $photos = null, ?array $poll = null, array $remove_attachment_ids = [] ): array|\WP_Error {
+		$existing = get_post( $post_id );
+		if ( ! $existing || $existing->post_type !== 'post' ) {
+			return new \WP_Error( 'not_found', 'Post not found.' );
+		}
+
+		$body  = trim( $body );
+		$slots = self::normalize_slots( $photos );
+
+		$is_poll      = is_array( $poll );
+		$was_poll     = (string) get_post_meta( $post_id, 'heyfam_poll_options', true ) !== '';
+		$kept_image_ids = self::existing_image_ids( $post_id );
+		// Anything not removed counts toward the "post has photos" check below.
+		$kept_image_ids = array_values( array_diff( $kept_image_ids, array_map( 'intval', $remove_attachment_ids ) ) );
+
+		if ( $is_poll ) {
+			$opts = self::sanitize_options( $poll['options'] ?? [] );
+			if ( count( $opts ) < 2 ) {
+				return new \WP_Error( 'too_few_options', 'A poll needs at least two options.' );
+			}
+			if ( count( $opts ) > 6 ) {
+				return new \WP_Error( 'too_many_options', 'A poll can have up to 6 options.' );
+			}
+			if ( $body === '' ) {
+				return new \WP_Error( 'no_question', 'Polls need a question.' );
+			}
+		} elseif ( $body === '' && empty( $slots ) && empty( $kept_image_ids ) ) {
+			return new \WP_Error( 'empty_post', 'Add some text or a photo.' );
+		}
+
+		$res = wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => wp_kses_post( $body ),
+		], true );
+		if ( is_wp_error( $res ) ) return $res;
+
+		if ( $is_poll ) {
+			update_post_meta( $post_id, 'heyfam_poll_options', wp_json_encode( $opts ) );
+
+			$closes_at    = isset( $poll['closes_at'] ) ? (string) $poll['closes_at'] : '';
+			$closes_mysql = '';
+			if ( $closes_at !== '' ) {
+				$ts = strtotime( $closes_at );
+				if ( $ts && $ts > time() ) {
+					$closes_mysql = gmdate( 'Y-m-d H:i:s', $ts );
+				}
+			}
+			update_post_meta( $post_id, 'heyfam_poll_closes_at', $closes_mysql );
+
+			$anon = ! empty( $poll['anon'] );
+			update_post_meta( $post_id, 'heyfam_poll_anon', $anon ? '1' : '0' );
+		} elseif ( $was_poll ) {
+			// User changed a poll back into a text/photo post — clear poll meta.
+			delete_post_meta( $post_id, 'heyfam_poll_options' );
+			delete_post_meta( $post_id, 'heyfam_poll_closes_at' );
+			delete_post_meta( $post_id, 'heyfam_poll_anon' );
+		}
+
+		$removed_ids = [];
+		foreach ( $remove_attachment_ids as $aid ) {
+			$aid = (int) $aid;
+			if ( $aid <= 0 ) continue;
+			$att = get_post( $aid );
+			if ( ! $att || (int) $att->post_parent !== $post_id ) continue;
+			if ( wp_delete_attachment( $aid, true ) ) {
+				$removed_ids[] = $aid;
+			}
+		}
+
+		$added_ids = [];
+		if ( ! $is_poll && ! empty( $slots ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			foreach ( $slots as $slot ) {
+				if ( empty( $slot['tmp_name'] ) || ! empty( $slot['error'] ) ) continue;
+				if ( ! self::is_acceptable_image( $slot ) ) continue;
+				$attach_id = media_handle_sideload( $slot, $post_id );
+				if ( is_wp_error( $attach_id ) ) {
+					error_log( '[heyfam] photo upload failed: ' . $attach_id->get_error_message() );
+					continue;
+				}
+				$added_ids[] = (int) $attach_id;
+			}
+		}
+
+		// Keep _thumbnail_id consistent: if the current thumbnail was removed,
+		// promote the first surviving image (existing + added) — or clear it.
+		$current_thumb = (int) get_post_thumbnail_id( $post_id );
+		if ( $current_thumb && in_array( $current_thumb, $removed_ids, true ) ) {
+			$first = array_merge( $kept_image_ids, $added_ids );
+			if ( ! empty( $first ) ) {
+				set_post_thumbnail( $post_id, $first[0] );
+			} else {
+				delete_post_thumbnail( $post_id );
+			}
+		} elseif ( ! $current_thumb && ! empty( $added_ids ) ) {
+			set_post_thumbnail( $post_id, $added_ids[0] );
+		}
+
+		return [
+			'post_id'                => $post_id,
+			'added_attachment_ids'   => $added_ids,
+			'removed_attachment_ids' => $removed_ids,
+		];
+	}
+
+	/**
+	 * Hard-delete a post and its image attachments. Caller verifies permission.
+	 * Comments and reactions cascade via WP's normal delete chain.
+	 */
+	public static function delete( int $post_id ): bool {
+		$post = get_post( $post_id );
+		if ( ! $post || $post->post_type !== 'post' ) return false;
+
+		foreach ( self::existing_image_ids( $post_id ) as $aid ) {
+			wp_delete_attachment( $aid, true );
+		}
+		return (bool) wp_delete_post( $post_id, true );
+	}
+
+	private static function existing_image_ids( int $post_id ): array {
+		$attachments = get_children( [
+			'post_parent'    => $post_id,
+			'post_type'      => 'attachment',
+			'post_mime_type' => 'image',
+			'numberposts'    => 50,
+			'fields'         => 'ids',
+		] );
+		return array_map( 'intval', $attachments ?: [] );
+	}
+
 	/** Strip + cap a list of option strings; drop empties; max 80 chars each. */
 	private static function sanitize_options( array $raw ): array {
 		$out = [];
