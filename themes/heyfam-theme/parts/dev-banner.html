@@ -3,7 +3,7 @@
        data-wp-interactive="heyfam/dev"
        data-wp-class--is-open="state.open">
   <button class="heyfam-dev__toggle" data-wp-on--click="actions.toggle">dev</button>
-  <div class="heyfam-dev__panel" data-wp-class--is-hidden="!state.open">
+  <div class="heyfam-dev__panel">
     <h4>Dev shortcuts</h4>
     <p class="heyfam-dev__msg" data-wp-text="state.message"></p>
     <ul>
@@ -11,6 +11,19 @@
       <li><button data-wp-on--click="actions.seedDemo" data-wp-bind--disabled="state.busy">Seed demo fam</button></li>
       <li><a href="/wp-login.php?action=logout">Log out</a></li>
       <li><a href="/wp-admin/">Open wp-admin</a></li>
+    </ul>
+    <h4>Simulate states</h4>
+    <ul>
+      <li><button data-wp-on--click="actions.simNudge">Nudge banner</button></li>
+      <li><button data-wp-on--click="actions.simEditor">Edit post modal</button></li>
+      <li><button data-wp-on--click="actions.simDelete">Delete confirm</button></li>
+      <li><button data-wp-on--click="actions.simDeleting">Delete — deleting…</button></li>
+      <li><button data-wp-on--click="actions.simDeleteError">Delete — error</button></li>
+      <li><button data-wp-on--click="actions.simPollMode">Composer — poll mode</button></li>
+      <li><button data-wp-on--click="actions.simSending">Composer — sending…</button></li>
+      <li><button data-wp-on--click="actions.simComposerError">Composer — error</button></li>
+      <li><button data-wp-on--click="actions.simEmptyFeed">Empty feed</button></li>
+      <li><button data-wp-on--click="actions.simReset">Reset simulated states</button></li>
     </ul>
   </div>
 </aside>
