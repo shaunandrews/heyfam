@@ -1,0 +1,38 @@
+# Files we ship to Pressable land inside wp-content/ on the server (see the
+# GitHub Integration page: Repository Subdirectory → Deployment Path mapping).
+# This file works like .gitignore and is read on every deploy.
+
+# Dev tooling and configs at repo root — none of this belongs on the server.
+/.github/
+/.gitignore
+/.deployignore
+/.DS_Store
+/.superpowers/
+/composer.json
+/composer.lock
+/package.json
+/package-lock.json
+/playwright.config.mjs
+/vitest.config.mjs
+/scripts/
+/tests/
+/docs/
+/.env
+/.env.*
+/*.md
+/wp-content/
+
+# Test fixtures and artifacts inside the plugin
+plugins/heyfam-core/tests/
+
+# JS test directories (vitest)
+**/__tests__/
+
+# Dev-only sources that are bundled into build/ by esbuild
+themes/heyfam-theme/src/interactivity/
+
+# OS + tool noise
+**/.DS_Store
+**/.phpunit*
+**/*.sqlite*
+**/debug.txt
