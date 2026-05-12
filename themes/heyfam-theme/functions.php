@@ -14,8 +14,14 @@ add_action( 'wp_enqueue_scripts', static function () {
     // Logged-in users get it everywhere.
     $public_auth_templates = [ 'page-signup', 'page-login', 'page-invite' ];
     $is_design_page        = (bool) get_query_var( 'heyfam_design' );
+    // The main-site root resolves to `templates/index.html` via the block
+    // template hierarchy, not as a singular Page — `is_page_template()` only
+    // catches the static-page case, so include the front-page case explicitly.
+    $is_main_site_landing  = ( is_front_page() || is_home() )
+        && (int) get_current_blog_id() === (int) get_network()->site_id;
     if (
         ! is_user_logged_in()
+        && ! $is_main_site_landing
         && ! is_page_template( 'templates/index.html' )
         && ! ( is_page() && in_array( get_page_template_slug(), $public_auth_templates, true ) )
         && ! $is_design_page
