@@ -28,6 +28,19 @@ final class Email {
 		return (bool) wp_mail( $user->user_email, $subject, $body, $headers );
 	}
 
+	/**
+	 * Send to an arbitrary email address (no user account required). Used for
+	 * inviting someone who hasn't joined yet — they get the link in their inbox.
+	 */
+	public static function send_to_address( string $to_email, string $subject, string $html_body ): bool {
+		if ( ! is_email( $to_email ) ) return false;
+		$headers = [
+			'Content-Type: text/html; charset=UTF-8',
+			'From: ' . self::from_address(),
+		];
+		return (bool) wp_mail( $to_email, $subject, $html_body, $headers );
+	}
+
 	public static function email_enabled_for( int $user_id ): bool {
 		return ! get_user_meta( $user_id, 'heyfam_email_unsubscribed', true );
 	}
