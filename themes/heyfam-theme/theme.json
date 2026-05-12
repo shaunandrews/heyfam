@@ -5,17 +5,16 @@
     "appearanceTools": true,
     "color": {
       "palette": [
-        { "slug": "bg",          "name": "Background",     "color": "#fffaf3" },
-        { "slug": "bg-elev",     "name": "Background Elev","color": "#fffefb" },
-        { "slug": "fg",          "name": "Foreground",     "color": "#1f1d1a" },
-        { "slug": "fg-muted",    "name": "Foreground Muted","color": "#6e655c" },
-        { "slug": "fg-subtle",   "name": "Foreground Subtle","color": "#b8a98a" },
-        { "slug": "border",      "name": "Border",         "color": "#efe7d6" },
-        { "slug": "border-strong","name": "Border Strong", "color": "#e3dac9" },
-        { "slug": "accent",      "name": "Accent",         "color": "#d97706" },
-        { "slug": "accent-fg",   "name": "Accent FG",      "color": "#ffffff" },
-        { "slug": "accent-soft", "name": "Accent Soft",    "color": "#fef3e2" },
-        { "slug": "danger",      "name": "Danger",         "color": "#b04141" },
+        { "slug": "background",        "name": "Background",         "color": "#f4f6f0" },
+        { "slug": "foreground",        "name": "Foreground",         "color": "#1a1f17" },
+        { "slug": "foreground-muted",  "name": "Foreground Muted",   "color": "#6a7166" },
+        { "slug": "foreground-subtle", "name": "Foreground Subtle",  "color": "#a8b0a3" },
+        { "slug": "border",            "name": "Border",             "color": "#dde4d7" },
+        { "slug": "border-strong",     "name": "Border Strong",      "color": "#ccd5c4" },
+        { "slug": "accent",            "name": "Accent",             "color": "#5a8a52" },
+        { "slug": "accent-foreground", "name": "Accent Foreground",  "color": "#ffffff" },
+        { "slug": "accent-soft",       "name": "Accent Soft",        "color": "#e9efe5" },
+        { "slug": "danger",      "name": "Danger",         "color": "#e07a5f" },
         { "slug": "success",     "name": "Success",        "color": "#3f7a4e" }
       ]
     },
@@ -85,7 +84,7 @@
       "focusRing": {
         "color":  "var(--wp--preset--color--accent)",
         "width":  "2px",
-        "offset": "2px"
+        "offset": "1px"
       },
       "avatar": {
         "size":      "32px",
@@ -106,8 +105,8 @@
   },
   "styles": {
     "color": {
-      "background": "var(--wp--preset--color--bg)",
-      "text":       "var(--wp--preset--color--fg)"
+      "background": "var(--wp--preset--color--background)",
+      "text":       "var(--wp--preset--color--foreground)"
     },
     "typography": {
       "fontFamily": "var(--wp--preset--font-family--system)",
@@ -116,14 +115,16 @@
     }
   },
   "templateParts": [
-    { "name": "header",     "title": "Header",     "area": "header" },
-    { "name": "fam-picker", "title": "Fam Picker", "area": "uncategorized" },
-    { "name": "composer",   "title": "Composer",   "area": "uncategorized" },
-    { "name": "post-card",  "title": "Post Card",  "area": "uncategorized" },
-    { "name": "gallery",    "title": "Gallery",    "area": "uncategorized" }
+    { "name": "header",       "title": "Header",       "area": "header" },
+    { "name": "fam-picker",   "title": "Fam Picker",   "area": "uncategorized" },
+    { "name": "composer",     "title": "Composer",     "area": "uncategorized" },
+    { "name": "post-card",    "title": "Post Card",    "area": "uncategorized" },
+    { "name": "gallery",      "title": "Gallery",      "area": "uncategorized" },
+    { "name": "post-editor",  "title": "Post Editor",  "area": "uncategorized" },
+    { "name": "post-delete",  "title": "Post Delete",  "area": "uncategorized" }
   ],
   "customTemplates": [
     { "name": "page-feed",    "title": "Fam Feed",         "postTypes": [ "page" ] },
-    { "name": "page-account", "title": "Account Settings", "postTypes": [ "page" ] }
+    { "name": "page-account", "title": "Settings",          "postTypes": [ "page" ] }
   ]
 }

@@ -13,15 +13,14 @@
   color-scheme: light dark;
 
   /* Color — semantic aliases */
-  --hf-color-bg:           var(--wp--preset--color--bg);
-  --hf-color-bg-elev:      var(--wp--preset--color--bg-elev);
-  --hf-color-fg:           var(--wp--preset--color--fg);
-  --hf-color-fg-muted:     var(--wp--preset--color--fg-muted);
-  --hf-color-fg-subtle:    var(--wp--preset--color--fg-subtle);
+  --hf-color-bg:           var(--wp--preset--color--background);
+  --hf-color-fg:           var(--wp--preset--color--foreground);
+  --hf-color-fg-muted:     var(--wp--preset--color--foreground-muted);
+  --hf-color-fg-subtle:    var(--wp--preset--color--foreground-subtle);
   --hf-color-border:       var(--wp--preset--color--border);
   --hf-color-border-strong:var(--wp--preset--color--border-strong);
   --hf-color-accent:       var(--wp--preset--color--accent);
-  --hf-color-accent-fg:    var(--wp--preset--color--accent-fg);
+  --hf-color-accent-fg:    var(--wp--preset--color--accent-foreground);
   --hf-color-accent-soft:  var(--wp--preset--color--accent-soft);
   --hf-color-danger:       var(--wp--preset--color--danger);
   --hf-color-success:      var(--wp--preset--color--success);
@@ -92,17 +91,16 @@
  */
 @media (prefers-color-scheme: dark) {
   :root {
-    --hf-color-bg:           #181410;
-    --hf-color-bg-elev:      #221c16;
-    --hf-color-fg:           #faf6ee;
-    --hf-color-fg-muted:     #b8ad9f;
-    --hf-color-fg-subtle:    #7a716a;
-    --hf-color-border:       #322a22;
-    --hf-color-border-strong:#3f352b;
-    --hf-color-accent:       #f59e0b;
-    --hf-color-accent-fg:    #181410;
-    --hf-color-accent-soft:  #2a1f12;
-    --hf-color-danger:       #d57676;
+    --hf-color-bg:           #141914;
+    --hf-color-fg:           #eef2eb;
+    --hf-color-fg-muted:     #a8b0a4;
+    --hf-color-fg-subtle:    #717a72;
+    --hf-color-border:       #2a2f2b;
+    --hf-color-border-strong:#353b36;
+    --hf-color-accent:       #8fbe85;
+    --hf-color-accent-fg:    #141914;
+    --hf-color-accent-soft:  #1f2a23;
+    --hf-color-danger:       #e89178;
     --hf-color-success:      #6fae82;
     --hf-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --hf-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
