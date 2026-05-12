@@ -9,14 +9,16 @@ add_action( 'after_setup_theme', static function () {
 } );
 
 add_action( 'wp_enqueue_scripts', static function () {
-    // Anonymous visitors only get the bundle on the landing page and on the
-    // public auth flow pages (signup, login, invite). Logged-in users get it
-    // everywhere.
+    // Anonymous visitors only get the bundle on the landing page, public auth
+    // flow pages (signup, login, invite), and the public /design reference.
+    // Logged-in users get it everywhere.
     $public_auth_templates = [ 'page-signup', 'page-login', 'page-invite' ];
+    $is_design_page        = (bool) get_query_var( 'heyfam_design' );
     if (
         ! is_user_logged_in()
         && ! is_page_template( 'templates/index.html' )
         && ! ( is_page() && in_array( get_page_template_slug(), $public_auth_templates, true ) )
+        && ! $is_design_page
     ) {
         return;
     }
@@ -52,6 +54,18 @@ add_action( 'wp_enqueue_scripts', static function () {
         '0.2.0'
     );
 
+    // Bundle CSS emitted by esbuild (CropperJS styles, etc.). Only enqueued
+    // when the build artefact exists so dev installs without a build don't 404.
+    $bundle_css = get_theme_file_path( 'build/index.css' );
+    if ( file_exists( $bundle_css ) ) {
+        wp_enqueue_style(
+            'heyfam-bundle',
+            get_theme_file_uri( 'build/index.css' ),
+            [ 'heyfam-components' ],
+            $asset['version'] ?? '0.1.0'
+        );
+    }
+
     // Surface the WP REST nonce, current fam slug, and VAPID public key to the IAPI store.
     $blog       = get_blog_details();
     $fam_slug   = trim( $blog->path, '/' );
@@ -68,6 +82,9 @@ add_action( 'wp_enqueue_scripts', static function () {
         'vapidKey'         => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
         'apiBase'          => '/wp-json/heyfam/v1',
         'userId'           => $uid,
+        'userAvatarUrl'    => $uid && class_exists( '\\HeyFam\\Core\\Avatars\\Avatar' )
+            ? \HeyFam\Core\Avatars\Avatar::url_for_user( $uid, 64 )
+            : '',
         'logoutUrl'        => is_user_logged_in() ? wp_logout_url( '/' ) : '',
         'devMode'          => ! getenv( 'TWILIO_ACCOUNT_SID' ),
         'devBanner'        => ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_user_logged_in() ),
@@ -97,6 +114,19 @@ add_filter( 'render_block_core/template-part', static function ( $content, $bloc
 add_action( 'wp', static function () {
     if ( is_admin() || ! class_exists( '\\HeyFam\\Core\\REST\\Routes' ) ) return;
     $is_main = (int) get_current_blog_id() === (int) get_network()->site_id;
+
+    // Main site front page: seed the user's families so the landing renders
+    // their fam list (instead of the marketing CTAs) on first paint.
+    if ( $is_main && is_user_logged_in() && ( is_front_page() || is_home() ) ) {
+        $fams = class_exists( '\\HeyFam\\Core\\Fams\\Membership' )
+            ? \HeyFam\Core\Fams\Membership::user_blogs( get_current_user_id() )
+            : [];
+        wp_interactivity_state( 'heyfam/landing', [
+            'fams'    => $fams,
+            'hasFams' => ! empty( $fams ),
+        ] );
+    }
+
     if ( $is_main ) return;
 
     if ( is_singular( 'post' ) ) {
@@ -120,12 +150,35 @@ add_action( 'wp', static function () {
 
 add_action( 'wp_head', static function () {
     echo '<link rel="manifest" href="/manifest.webmanifest">' . "\n";
-    echo '<meta name="theme-color" content="#d97706">' . "\n";
+    echo '<meta name="theme-color" content="#5a8a52">' . "\n";
     echo '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' . "\n";
 } );
 
 add_action( 'init', static function () {
     add_rewrite_rule( '^p/(\d+)/?$', 'index.php?p=$matches[1]', 'top' );
+    add_rewrite_rule( '^design/?$',  'index.php?heyfam_design=1', 'top' );
+
+    // Self-heal: bump the version below when a rewrite rule changes.
+    if ( get_option( 'heyfam_rewrite_v' ) !== '2' ) {
+        flush_rewrite_rules();
+        update_option( 'heyfam_rewrite_v', '2' );
+    }
+} );
+
+add_filter( 'query_vars', static function ( $vars ) {
+    $vars[] = 'heyfam_design';
+    return $vars;
+} );
+
+// Route /design to the PHP-rendered design system reference template.
+add_filter( 'template_include', static function ( $template ) {
+    if ( get_query_var( 'heyfam_design' ) ) {
+        $design = get_theme_file_path( 'templates/design.php' );
+        if ( file_exists( $design ) ) {
+            return $design;
+        }
+    }
+    return $template;
 } );
 
 // Server-render our IAPI directives (data-wp-each expansion, bind, text, etc.)
@@ -136,7 +189,10 @@ add_filter( 'render_block', static function ( $content, $block ) {
     if ( $name !== 'core/html' ) {
         return $content;
     }
-    if ( ! str_contains( $content, 'data-wp-interactive="heyfam/feed"' ) ) {
+    if (
+        ! str_contains( $content, 'data-wp-interactive="heyfam/feed"' )
+        && ! str_contains( $content, 'data-wp-interactive="heyfam/landing"' )
+    ) {
         return $content;
     }
     return wp_interactivity_process_directives( $content );
