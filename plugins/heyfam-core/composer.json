@@ -7,8 +7,7 @@
     "php": ">=8.1",
     "minishlink/web-push": "^9.0",
     "twilio/sdk": "^8.0",
-    "woocommerce/action-scheduler": "^3.7",
-    "wi-wissen/boring-avatars": "dev-main"
+    "woocommerce/action-scheduler": "^3.7"
   },
   "autoload": {
     "psr-4": {
