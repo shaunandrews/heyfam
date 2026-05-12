@@ -4,7 +4,7 @@
 <div class="wp-block-group heyfam-account">
   <!-- wp:html -->
   <div data-wp-interactive="heyfam/account" data-wp-init="callbacks.init">
-    <h1>Account settings</h1>
+    <h1>Settings</h1>
 
     <section class="heyfam-account__avatar heyfam-card heyfam-card--tight"
              data-wp-init="callbacks.loadMe">
@@ -15,15 +15,65 @@
         <div class="heyfam-account__avatar-actions">
           <label class="heyfam-button heyfam-button--secondary">
             <input type="file" accept="image/*" hidden
-                   data-wp-on--change="actions.pickAvatar" />
-            Change photo
+                   data-wp-on--change="actions.onPhotoChosen" />
+            Upload
           </label>
-          <button type="button" class="heyfam-button heyfam-button--ghost"
+          <button type="button" class="heyfam-button heyfam-button--secondary"
+                  data-wp-on--click="actions.takePhoto">Take photo</button>
+          <input type="file" accept="image/*" capture="user" hidden
+                 data-wp-on--change="actions.onPhotoChosen"
+                 data-camera-input />
+          <button type="button" class="heyfam-button heyfam-button--tertiary"
                   data-wp-class--is-hidden="!state.me.has_uploaded_avatar"
                   data-wp-on--click="actions.clearAvatar">Reset</button>
         </div>
       </div>
     </section>
+
+    <div class="heyfam-modal heyfam-camera-modal"
+         data-wp-class--is-hidden="!state.cameraOpen"
+         role="dialog" aria-modal="true" aria-label="Take a photo">
+      <div class="heyfam-modal__dialog">
+        <h3 style="margin: 0;">Take a photo</h3>
+        <div class="heyfam-camera__stage">
+          <video class="heyfam-camera__video" autoplay playsinline muted></video>
+          <p class="heyfam-camera__error"
+             data-wp-class--is-hidden="!state.cameraError"
+             data-wp-text="state.cameraError"></p>
+        </div>
+        <div class="heyfam-modal__actions">
+          <button type="button" class="heyfam-button heyfam-button--tertiary"
+                  data-wp-on--click="actions.closeCamera">Cancel</button>
+          <button type="button" class="heyfam-button heyfam-button--primary"
+                  data-wp-bind--disabled="!state.cameraReady"
+                  data-wp-on--click="actions.capturePhoto">Capture</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="heyfam-modal heyfam-crop-modal"
+         data-wp-class--is-hidden="!state.cropOpen"
+         role="dialog" aria-modal="true" aria-label="Crop photo">
+      <div class="heyfam-modal__dialog">
+        <h3 style="margin: 0;">Crop photo</h3>
+        <div class="heyfam-crop__stage">
+          <img class="heyfam-crop__image" alt=""
+               data-wp-bind--src="state.cropSrc" />
+        </div>
+        <div class="heyfam-modal__actions">
+          <button type="button" class="heyfam-button heyfam-button--tertiary"
+                  data-wp-on--click="actions.closeCrop">Cancel</button>
+          <button type="button" class="heyfam-button heyfam-button--primary"
+                  data-wp-bind--disabled="state.uploading"
+                  data-wp-on--click="actions.saveCrop">
+            <span data-wp-class--is-hidden="state.uploading">Save photo</span>
+            <span data-wp-class--is-hidden="!state.uploading">
+              <span class="heyfam-spinner"></span> Uploading…
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <p data-wp-class--is-hidden="!state.loading">Loading…</p>
     <p class="error" data-wp-class--is-hidden="!state.loadError" data-wp-text="state.loadError"></p>
@@ -32,7 +82,75 @@
 
     <template data-wp-each="state.fams" data-wp-each-key="context.item.blog_id">
       <section class="heyfam-account__fam">
-        <h2><a data-wp-bind--href="context.item.url" data-wp-text="context.item.name"></a></h2>
+        <form class="heyfam-account__fam-rename"
+              data-wp-on--submit="actions.saveFamName"
+              data-wp-bind--data-fam="context.item.slug">
+          <label class="heyfam-field">
+            <span class="heyfam-field__label">Family name</span>
+            <input class="heyfam-input" type="text" required
+                   data-wp-bind--value="context.item.name"
+                   data-wp-bind--data-fam="context.item.slug"
+                   data-wp-on--input="actions.onFamNameInput" />
+          </label>
+          <div class="heyfam-account__fam-rename-actions">
+            <a class="heyfam-account__fam-open" data-wp-bind--href="context.item.url">Open →</a>
+            <button type="submit" class="heyfam-button heyfam-button--primary">Save</button>
+          </div>
+        </form>
+        <div class="heyfam-account__invite">
+          <h3>Invite people</h3>
+          <div class="heyfam-account__invite-link">
+            <label class="heyfam-field">
+              <span class="heyfam-field__label">Shareable link</span>
+              <input class="heyfam-input" type="text" readonly
+                     data-wp-bind--value="context.item.inviteUrl"
+                     data-wp-on--focus="actions.selectAll" />
+            </label>
+            <div class="heyfam-account__invite-actions">
+              <button type="button" class="heyfam-button heyfam-button--secondary"
+                      data-wp-bind--data-fam="context.item.slug"
+                      data-wp-on--click="actions.copyInviteLink">Copy link</button>
+              <button type="button" class="heyfam-button heyfam-button--secondary"
+                      data-wp-bind--data-fam="context.item.slug"
+                      data-wp-class--is-hidden="!state.canShare"
+                      data-wp-on--click="actions.shareInviteLink">Share</button>
+              <button type="button" class="heyfam-button heyfam-button--secondary"
+                      data-wp-bind--data-fam="context.item.slug"
+                      data-wp-on--click="actions.toggleQr">QR code</button>
+            </div>
+            <div class="heyfam-account__invite-qr"
+                 data-wp-class--is-hidden="!context.item.qrOpen"></div>
+          </div>
+
+          <form class="heyfam-account__invite-send"
+                data-wp-on--submit="actions.sendInvites"
+                data-wp-bind--data-fam="context.item.slug">
+            <label class="heyfam-field">
+              <span class="heyfam-field__label">Or send by phone or email</span>
+              <textarea class="heyfam-textarea" rows="2"
+                        placeholder="One per line — phone numbers or email addresses"
+                        data-wp-bind--value="context.item.inviteRecipients"
+                        data-wp-bind--data-fam="context.item.slug"
+                        data-wp-on--input="actions.updateInviteRecipients"></textarea>
+            </label>
+            <label class="heyfam-field">
+              <span class="heyfam-field__label">Note (optional)</span>
+              <input class="heyfam-input" type="text" maxlength="120"
+                     placeholder="A personal note added to each invite"
+                     data-wp-bind--value="context.item.inviteNote"
+                     data-wp-bind--data-fam="context.item.slug"
+                     data-wp-on--input="actions.updateInviteNote" />
+            </label>
+            <div class="heyfam-account__invite-send-row">
+              <p class="heyfam-account__invite-status"
+                 data-wp-class--is-hidden="!context.item.inviteStatus"
+                 data-wp-text="context.item.inviteStatus"></p>
+              <button type="submit" class="heyfam-button heyfam-button--primary"
+                      data-wp-bind--disabled="context.item.sendingInvites">Send invites</button>
+            </div>
+          </form>
+        </div>
+
         <div class="heyfam-account__prefs">
           <span></span>
           <strong>push</strong>
@@ -57,19 +175,17 @@
       </section>
     </template>
 
-    <section class="heyfam-account__invite" data-wp-class--is-hidden="!state.fams.length">
-      <h2>Invite more family</h2>
-      <p>Pick a fam, paste numbers, send.</p>
-      <a class="heyfam-account__invite-link" data-wp-bind--href="state.firstFamInviteHref">
-        Invite to your fam →
-      </a>
-    </section>
-
     <section class="heyfam-account__push" data-wp-class--is-hidden="!state.fams.length">
       <h2>Push notifications</h2>
       <p data-wp-class--is-hidden="state.pushNotEnabled">Browser push is off. <button type="button" data-wp-on--click="actions.requestPush">Enable push</button></p>
       <p data-wp-class--is-hidden="state.pushNotGranted">Push is enabled in this browser.</p>
       <p data-wp-class--is-hidden="state.pushNotDenied">Push is blocked. Update your browser's site settings to re-enable.</p>
+    </section>
+
+    <section class="heyfam-account__new-fam">
+      <h2>Start another family</h2>
+      <p>Most people only need one. If you want a separate space — say, for grandparents-only or a side of the family — you can spin up another.</p>
+      <a class="heyfam-button heyfam-button--secondary" href="/signup">Create a new family</a>
     </section>
 
     <section class="heyfam-account__logout">
