@@ -66,4 +66,16 @@ final class Manager {
 		}
 		return $out;
 	}
+
+	/** All reaction rows for a target, oldest first. Used to build per-emoji reactor lists. */
+	public static function rows_for( string $target_type, int $target_id ): array {
+		global $wpdb;
+		$table = self::table_name();
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT emoji, user_id FROM $table
+			 WHERE target_type = %s AND target_id = %d
+			 ORDER BY created_at ASC, id ASC",
+			$target_type, $target_id
+		), ARRAY_A );
+	}
 }

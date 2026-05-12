@@ -12,9 +12,10 @@ store( 'heyfam/reactions', {
       const id        = container ? parseInt( container.dataset.id, 10 ) : 0;
       const target    = container?.dataset.targetType || 'post';
       const ctx       = getContext();
-      const emoji     = ctx.entry?.[0];
+      const emoji     = ctx.entry?.emoji;
+      const mine      = !! ctx.entry?.mine;
       if ( ! id || ! emoji ) return;
-      yield apply( target, id, emoji );
+      yield apply( target, id, emoji, mine );
     },
     openPicker( e ) {
       const btn       = e?.currentTarget || e?.target?.closest( 'button' ) || e?.target;
@@ -27,10 +28,10 @@ store( 'heyfam/reactions', {
   },
 } );
 
-function* apply( target_type, target_id, emoji ) {
+function* apply( target_type, target_id, emoji, remove = false ) {
   const heyfam = store( 'heyfam' ).state;
   yield fetch( `${heyfam.apiBase}/${heyfam.famSlug}/reactions`, {
-    method: 'POST', credentials: 'include',
+    method: remove ? 'DELETE' : 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
     body: JSON.stringify( { target_type, target_id, emoji } ),
   } );
