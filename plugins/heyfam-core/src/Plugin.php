@@ -7,6 +7,7 @@ final class Plugin {
 		new \HeyFam\Core\Privacy\PIIShield();
 		new \HeyFam\Core\REST\Routes();
 		\HeyFam\Core\REST\DevRoutes::register();
+		\HeyFam\Core\UI\Icons::register();
 		new \HeyFam\Core\Fams\Roles();
 		new \HeyFam\Core\Comments\Threading();
 		new \HeyFam\Core\PWA\Serve();

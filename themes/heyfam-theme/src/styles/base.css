@@ -67,9 +67,8 @@ img, svg { display: block; max-width: 100%; }
 .heyfam-stack { display: grid; gap: var(--hf-space-4); }
 .heyfam-stack--tight { gap: var(--hf-space-2); }
 .heyfam-stack--loose { gap: var(--hf-space-5); }
-.heyfam-row {
-  display: flex; gap: var(--hf-space-3); align-items: center;
-}
-.heyfam-row--baseline { align-items: baseline; }
-.heyfam-row--between  { justify-content: space-between; }
-.heyfam-row--wrap     { flex-wrap: wrap; }
+
+/* Icon system — defined in plugins/heyfam-core/src/UI/Icons.php. The sprite
+ * is invisible; .hf-icon is the inline glyph that <use>s a symbol from it. */
+.heyfam-icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.hf-icon { display: inline-block; width: 1em; height: 1em; vertical-align: middle; flex-shrink: 0; }

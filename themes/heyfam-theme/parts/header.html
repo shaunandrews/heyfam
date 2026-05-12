@@ -16,12 +16,14 @@
   <button class="heyfam-lightbox__close"
           type="button"
           data-wp-on--click="actions.close"
-          aria-label="Close">×</button>
+          aria-label="Close"
+          data-tooltip="Close">×</button>
   <button class="heyfam-lightbox__nav heyfam-lightbox__nav--prev"
           type="button"
           data-wp-bind--disabled="!state.hasPrev"
           data-wp-on--click="actions.prev"
-          aria-label="Previous">‹</button>
+          aria-label="Previous"
+          data-tooltip="Previous">‹</button>
   <figure class="heyfam-lightbox__figure">
     <img class="heyfam-lightbox__img"
          data-wp-bind--src="state.currentUrl"
@@ -34,6 +36,7 @@
           type="button"
           data-wp-bind--disabled="!state.hasNext"
           data-wp-on--click="actions.next"
-          aria-label="Next">›</button>
+          aria-label="Next"
+          data-tooltip="Next">›</button>
 </div>
 <!-- /wp:html -->
