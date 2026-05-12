@@ -1,14 +1,36 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
-<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-landing heyfam-stack heyfam-stack--loose"} -->
-<div class="wp-block-group heyfam-landing heyfam-stack heyfam-stack--loose">
-  <!-- wp:heading {"level":1} --><h1>HeyFam</h1><!-- /wp:heading -->
-  <!-- wp:paragraph --><p>Family conversations, organized.</p><!-- /wp:paragraph -->
-  <!-- wp:buttons -->
-  <div class="wp-block-buttons">
-    <!-- wp:button --><div class="wp-block-button"><a class="wp-block-button__link heyfam-button heyfam-button--primary" href="/signup">Start a fam</a></div><!-- /wp:button -->
-    <!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link heyfam-button heyfam-button--secondary" href="/login">Log in</a></div><!-- /wp:button -->
+<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-landing"} -->
+<div class="wp-block-group heyfam-landing">
+  <!-- wp:html -->
+  <div class="heyfam-landing__inner" data-wp-interactive="heyfam/landing">
+    <section class="heyfam-landing__fams" data-wp-class--is-hidden="!state.hasFams">
+      <h1>Your families</h1>
+      <ul class="heyfam-landing__fams-list">
+        <template data-wp-each="state.fams" data-wp-each-key="context.item.blog_id">
+          <li>
+            <a class="heyfam-landing__fam" data-wp-bind--href="context.item.url">
+              <strong data-wp-text="context.item.name"></strong>
+              <span aria-hidden="true">→</span>
+            </a>
+          </li>
+        </template>
+      </ul>
+      <p class="heyfam-landing__hint">
+        Need another? <a href="/signup">Start a new family</a>.
+      </p>
+    </section>
+
+    <section class="heyfam-landing__intro heyfam-stack heyfam-stack--loose"
+             data-wp-class--is-hidden="state.hasFams">
+      <h1>HeyFam</h1>
+      <p>Family conversations, organized.</p>
+      <div class="heyfam-landing__cta">
+        <a class="heyfam-button heyfam-button--primary" href="/signup">Start a fam</a>
+        <a class="heyfam-button heyfam-button--secondary" href="/login">Log in</a>
+      </div>
+    </section>
   </div>
-  <!-- /wp:buttons -->
+  <!-- /wp:html -->
 </div>
 <!-- /wp:group -->

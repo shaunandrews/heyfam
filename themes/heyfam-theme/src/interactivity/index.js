@@ -4,7 +4,7 @@ import './reactions.js';
 import './comments.js';
 import './polls.js';
 import './feed-poll.js';
-import './fam-picker.js';
+import './landing.js';
 import './push-subscribe.js';
 import './signup.js';
 import './login.js';
