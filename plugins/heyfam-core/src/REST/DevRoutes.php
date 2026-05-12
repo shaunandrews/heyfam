@@ -29,12 +29,15 @@ final class DevRoutes {
 
 		register_rest_route( 'heyfam/v1', '/_dev/seed-demo', [
 			'methods'             => 'POST',
-			'permission_callback' => static fn() => current_user_can( 'manage_network' ) || current_user_can( 'manage_options' ),
+			// Whole route family is already WP_DEBUG-gated above. Any signed-in
+			// dev can run it — the network-admin check was tripping plain fam
+			// admins on Studio installs.
+			'permission_callback' => static fn() => is_user_logged_in(),
 			'args'                => [
-				'name'    => [ 'required' => false, 'type' => 'string',  'default' => 'Demo Fam' ],
+				'name'    => [ 'required' => false, 'type' => 'string',  'default' => 'The Reyes Family' ],
 				'slug'    => [ 'required' => false, 'type' => 'string' ],
-				'members' => [ 'required' => false, 'type' => 'integer', 'default' => 3 ],
-				'posts'   => [ 'required' => false, 'type' => 'integer', 'default' => 5 ],
+				'members' => [ 'required' => false, 'type' => 'integer', 'default' => 5 ],
+				'posts'   => [ 'required' => false, 'type' => 'integer', 'default' => 8 ],
 				'reset'   => [ 'required' => false, 'type' => 'boolean', 'default' => false ],
 			],
 			'callback'            => [ self::class, 'seed_demo' ],
@@ -61,7 +64,7 @@ final class DevRoutes {
 	public static function seed_demo( \WP_REST_Request $req ): \WP_REST_Response {
 		$opts = $req->get_params();
 		if ( ! empty( $opts['reset'] ) ) {
-			$slug     = $opts['slug'] ?? \HeyFam\Core\Fams\Slugs::suggest( $opts['name'] ?? 'Demo Fam' );
+			$slug     = $opts['slug'] ?? \HeyFam\Core\Fams\Slugs::suggest( $opts['name'] ?? 'The Reyes Family' );
 			$main     = get_network()->site_id;
 			$domain   = get_blog_details( $main )->domain;
 			$path     = rtrim( get_blog_details( $main )->path, '/' ) . "/$slug/";
