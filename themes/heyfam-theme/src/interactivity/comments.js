@@ -33,14 +33,12 @@ store( 'heyfam/comments', {
         form.querySelector( 'textarea' )?.focus();
       }
     },
-    cancelReply() {
-      const s = store( 'heyfam/comments' ).state;
-      s.composing = 0;
-      s.body      = '';
-      closeOpenInlineForms();
-    },
     updateBody( e ) {
       store( 'heyfam/comments' ).state.body = e.target.value;
+      autoSize( e.target );
+    },
+    autosize( e ) {
+      autoSize( e.target );
     },
     *submit( e ) {
       e.preventDefault();
@@ -69,7 +67,7 @@ store( 'heyfam/comments', {
         } );
         if ( ! r.ok ) throw new Error( 'comment-failed' );
         if ( isRoot ) {
-          if ( ta ) ta.value = '';
+          if ( ta ) { ta.value = ''; autoSize( ta ); }
         } else {
           s.body      = '';
           s.composing = 0;
@@ -88,4 +86,17 @@ store( 'heyfam/comments', {
 function closeOpenInlineForms() {
   document.querySelectorAll( '.heyfam-comment-form--inline.is-open' )
     .forEach( ( el ) => el.classList.remove( 'is-open' ) );
+}
+
+/**
+ * Resize a textarea to fit its content (up to a soft cap). The cap keeps
+ * runaway essays from pushing the rest of the page off-screen; scroll kicks
+ * in past it.
+ */
+const AUTOSIZE_MAX = 200;
+function autoSize( el ) {
+  if ( ! el || el.tagName !== 'TEXTAREA' ) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min( el.scrollHeight, AUTOSIZE_MAX ) + 'px';
+  el.style.overflowY = el.scrollHeight > AUTOSIZE_MAX ? 'auto' : 'hidden';
 }
