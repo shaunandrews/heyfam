@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { build } from 'esbuild';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,9 @@ const root    = resolve( dirname( fileURLToPath( import.meta.url ) ), '..' );
 const entry   = `${root}/themes/heyfam-theme/src/interactivity/index.js`;
 const outdir  = `${root}/themes/heyfam-theme/build`;
 
+// Wipe the previous build first — esbuild writes hash-named chunks, so
+// repeated builds otherwise accumulate stale copies (3× heic2any, etc).
+rmSync( outdir, { recursive: true, force: true } );
 mkdirSync( outdir, { recursive: true } );
 
 await build( {
