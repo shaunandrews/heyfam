@@ -1,0 +1,28 @@
+<!-- wp:html -->
+<div class="heyfam-modal heyfam-modal--confirm"
+     data-wp-interactive="heyfam/feed"
+     data-wp-class--is-open="state.deleteOpen"
+     data-wp-on--click="actions.onDeleteBackdrop"
+     role="alertdialog" aria-modal="true" aria-label="Delete post">
+  <div class="heyfam-modal__dialog heyfam-modal__dialog--confirm">
+    <h3 class="heyfam-modal__title">Delete this post?</h3>
+    <p class="heyfam-modal__body">This can't be undone. Comments and reactions will be deleted too.</p>
+    <p class="heyfam-modal__error"
+       data-wp-text="state.deleteError"
+       data-wp-class--is-hidden="!state.deleteError"></p>
+    <div class="heyfam-modal__actions">
+      <button type="button" class="heyfam-button heyfam-button--tertiary"
+              data-wp-on--click="actions.closeDeleteConfirm"
+              data-wp-bind--disabled="state.deleting">Cancel</button>
+      <button type="button" class="heyfam-button heyfam-button--danger"
+              data-wp-on--click="actions.confirmDelete"
+              data-wp-bind--disabled="state.deleting">
+        <span data-wp-class--is-hidden="state.deleting">Delete</span>
+        <span data-wp-class--is-hidden="!state.deleting">
+          <span class="heyfam-spinner"></span> Deleting…
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+<!-- /wp:html -->

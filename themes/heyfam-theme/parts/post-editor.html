@@ -1,0 +1,18 @@
+<!-- wp:html -->
+<div class="heyfam-modal heyfam-modal--composer"
+     data-wp-interactive="heyfam/composer"
+     data-wp-class--is-open="state.editorOpen"
+     data-wp-on--click="actions.onEditorBackdrop"
+     role="dialog" aria-modal="true" aria-label="Edit post">
+  <div class="heyfam-modal__dialog heyfam-modal__dialog--composer">
+    <header class="heyfam-modal__header">
+      <h3 class="heyfam-modal__title">Edit post</h3>
+      <button type="button"
+              class="heyfam-button heyfam-button--icon heyfam-button--sm heyfam-button--tertiary"
+              aria-label="Close" data-tooltip="Close"
+              data-wp-on--click="actions.closeEditor">×</button>
+    </header>
+    <!-- wp:template-part {"slug":"composer"} /-->
+  </div>
+</div>
+<!-- /wp:html -->

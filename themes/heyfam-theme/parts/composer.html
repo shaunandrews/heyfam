@@ -14,7 +14,7 @@
 
   <!-- Poll options list — shown only in poll mode. -->
   <div class="heyfam-composer__poll"
-       data-wp-class--is-hidden="!state.pollMode">
+       data-wp-class--is-active="state.pollMode">
     <ul class="heyfam-composer__options">
       <template data-wp-each--option="state.optionList" data-wp-each-key="context.option.id">
         <li class="heyfam-composer__option">
@@ -49,12 +49,26 @@
   </div>
 
   <ul class="heyfam-composer__previews"
+      data-wp-class--is-hidden="!state.hasExistingImages">
+    <template data-wp-each--image="state.existingImages" data-wp-each-key="context.image.id">
+      <li class="heyfam-composer__preview">
+        <img data-wp-bind--src="context.image.url" data-wp-bind--alt="context.image.alt" />
+        <button type="button" class="heyfam-composer__preview-remove"
+                aria-label="Remove"
+                data-tooltip="Remove"
+                data-wp-on--click="actions.removeExistingImage">×</button>
+      </li>
+    </template>
+  </ul>
+
+  <ul class="heyfam-composer__previews"
       data-wp-class--is-hidden="!state.hasFiles">
     <template data-wp-each="state.pending" data-wp-each-key="context.item.id">
       <li class="heyfam-composer__preview">
         <img data-wp-bind--src="context.item.previewUrl" alt="" />
         <button type="button" class="heyfam-composer__preview-remove"
                 aria-label="Remove"
+                data-tooltip="Remove"
                 data-wp-on--click="actions.removeFile">×</button>
         <span class="heyfam-composer__preview-status"
               data-wp-text="context.item.status"
@@ -67,22 +81,29 @@
      data-wp-text="state.error"
      data-wp-class--is-hidden="!state.error"></p>
 
-  <div class="heyfam-row heyfam-row--between">
-    <label class="heyfam-composer__photo"
-           data-wp-class--is-hidden="state.pollMode">
-      <input type="file" accept="image/*,.heic,.heif" multiple
-             data-wp-on--change="actions.pickPhotos" hidden />
-      <span class="heyfam-pill" data-wp-text="state.photoLabel">Add photos</span>
-    </label>
-    <button type="button" class="heyfam-composer__poll-toggle"
-            data-wp-on--click="actions.togglePollMode">
-      <span data-wp-text="state.pollToggleLabel"></span>
-    </button>
+  <div class="heyfam-composer__actions">
+    <div class="heyfam-composer__tools">
+      <label class="heyfam-button heyfam-button--icon heyfam-button--sm heyfam-button--tertiary heyfam-composer__photo"
+             data-wp-class--is-hidden="state.pollMode"
+             data-wp-bind--aria-label="state.photoLabel"
+             data-wp-bind--data-tooltip="state.photoLabel">
+        <input type="file" accept="image/*,.heic,.heif" multiple
+               data-wp-on--change="actions.pickPhotos" hidden />
+        <svg class="hf-icon" width="16" height="16" aria-hidden="true"><use href="#hfi-photo"></use></svg>
+      </label>
+      <button type="button" class="heyfam-button heyfam-button--icon heyfam-button--sm heyfam-button--tertiary"
+              data-wp-class--is-active="state.pollMode"
+              data-wp-bind--aria-label="state.pollToggleLabel"
+              data-wp-bind--data-tooltip="state.pollToggleLabel"
+              data-wp-on--click="actions.togglePollMode">
+        <svg class="hf-icon" width="16" height="16" aria-hidden="true"><use href="#hfi-poll"></use></svg>
+      </button>
+    </div>
     <button type="submit" class="heyfam-button heyfam-button--primary" data-wp-bind--disabled="state.submitting">
       <span data-wp-class--is-hidden="state.submitting" data-wp-text="state.submitLabel"></span>
-      <span data-wp-class--is-hidden="!state.submitting">
+      <span class="heyfam-composer__sending" data-wp-class--is-active="state.submitting">
         <span class="heyfam-spinner"></span>
-        Posting…
+        Sending…
       </span>
     </button>
   </div>

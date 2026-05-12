@@ -5,7 +5,6 @@
  *   - Button
  *   - Input / Textarea / Label
  *   - Card
- *   - Pill / Tag
  *   - Avatar
  *   - Spinner
  *   - EmptyState
@@ -15,15 +14,24 @@
  *     auth screens, account screen, emoji picker)
  */
 
-/* --- Button -------------------------------------------------------- */
+/* --- Button --------------------------------------------------------
+ * Two axes compose freely:
+ *   Variant: --primary | --secondary | --tertiary | --danger
+ *   Size:    (default 2.5rem)         | --sm  (1.75rem)
+ *   Shape:   (default text)           | --icon (square, no horizontal padding)
+ *   Width:                              --block (100%)
+ *
+ * `.is-active` is a toggle state for tertiary buttons that flip a mode on.
+ */
 .heyfam-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--hf-space-2);
   border: 1px solid transparent;
-  border-radius: var(--hf-radius-pill);
-  padding: var(--hf-space-2) var(--hf-space-4);
+  border-radius: var(--hf-radius-md);
+  height: 2.5rem;
+  padding-inline: var(--hf-space-4);
   font: inherit;
   font-weight: var(--hf-font-weight-medium);
   line-height: var(--hf-line-height-tight);
@@ -41,6 +49,7 @@
 .heyfam-button:active { transform: scale(0.97); }
 .heyfam-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Variants */
 .heyfam-button--primary {
   background: var(--hf-color-accent);
   color: var(--hf-color-accent-fg);
@@ -48,29 +57,49 @@
 .heyfam-button--primary:hover { filter: brightness(0.95); }
 
 .heyfam-button--secondary {
-  background: var(--hf-color-bg-elev);
+  background: transparent;
   border-color: var(--hf-color-border-strong);
   color: var(--hf-color-fg);
 }
 .heyfam-button--secondary:hover { border-color: var(--hf-color-fg-muted); }
 
-.heyfam-button--ghost {
+.heyfam-button--tertiary {
   background: transparent;
   color: var(--hf-color-fg-muted);
-  padding: var(--hf-space-2) var(--hf-space-3);
 }
-.heyfam-button--ghost:hover { color: var(--hf-color-fg); background: var(--hf-color-accent-soft); }
+.heyfam-button--tertiary:hover { color: var(--hf-color-fg); background: var(--hf-color-accent-soft); }
 
+.heyfam-button--danger {
+  background: var(--hf-color-danger);
+  color: #fff;
+}
+.heyfam-button--danger:hover { filter: brightness(0.95); }
+
+/* Sizes */
+.heyfam-button--sm {
+  height: 1.75rem;
+  padding-inline: var(--hf-space-3);
+  font-size: var(--hf-font-size-sm);
+  gap: var(--hf-space-1);
+}
+
+/* Shape: icon-only (square, no horizontal padding) */
 .heyfam-button--icon {
-  width: 2.25rem; height: 2.25rem; padding: 0;
-  border-radius: var(--hf-radius-pill);
-  background: transparent;
-  color: var(--hf-color-fg-muted);
+  width: 2.5rem;
+  padding-inline: 0;
 }
-.heyfam-button--icon:hover { background: var(--hf-color-accent-soft); color: var(--hf-color-fg); }
+.heyfam-button--icon.heyfam-button--sm {
+  width: 1.75rem;
+}
 
-.heyfam-button--danger { background: var(--hf-color-danger); color: white; }
-.heyfam-button--block  { width: 100%; }
+/* Modifiers */
+.heyfam-button--block { width: 100%; }
+
+/* Toggled state — used by tertiary toggles. */
+.heyfam-button.is-active {
+  color: var(--hf-color-accent);
+  background: var(--hf-color-accent-soft);
+}
 
 /* --- Input / Textarea --------------------------------------------- */
 .heyfam-input,
@@ -80,17 +109,14 @@
   padding: var(--hf-space-2) var(--hf-space-3);
   border: 1px solid var(--hf-color-border-strong);
   border-radius: var(--hf-radius-md);
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   color: var(--hf-color-fg);
   transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
   -webkit-appearance: none;
 }
-.heyfam-input:focus-visible,
-.heyfam-textarea:focus-visible {
-  outline: none;
-  border-color: var(--hf-color-accent);
-  box-shadow: 0 0 0 var(--hf-focus-width) var(--hf-color-accent-soft);
-}
+/* Inputs/textareas defer to the global `:focus-visible` rule in base.css:
+ * a 2px solid ring with 1px offset, painted via the native `outline` —
+ * pinned to the element by the browser, not a border + box-shadow stack. */
 .heyfam-textarea { resize: vertical; min-height: 2.5rem; line-height: var(--hf-line-height-normal); }
 .heyfam-input::placeholder,
 .heyfam-textarea::placeholder { color: var(--hf-color-fg-subtle); }
@@ -112,7 +138,7 @@
 
 /* --- Card --------------------------------------------------------- */
 .heyfam-card {
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border: 1px solid var(--hf-color-border);
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
@@ -120,30 +146,13 @@
   gap: var(--hf-space-3);
 }
 .heyfam-card--tight   { padding: var(--hf-space-3); }
-.heyfam-card--elevated{ box-shadow: var(--hf-shadow-md); border-color: transparent; }
-
-/* --- Pill / Tag --------------------------------------------------- */
-.heyfam-pill {
-  display: inline-flex; align-items: center; gap: var(--hf-space-1);
-  padding: 0.15rem var(--hf-space-3);
-  border-radius: var(--hf-radius-pill);
-  border: 1px solid var(--hf-color-border);
-  background: var(--hf-color-bg-elev);
-  font-size: var(--hf-font-size-sm);
-  color: var(--hf-color-fg);
-}
-.heyfam-pill--accent {
-  background: var(--hf-color-accent-soft);
-  border-color: transparent;
-  color: var(--hf-color-fg);
-}
 
 /* --- Avatar ------------------------------------------------------- */
 .heyfam-avatar {
   width: var(--hf-avatar-size);
   height: var(--hf-avatar-size);
   border-radius: 50%;
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   object-fit: cover;
   flex-shrink: 0;
   display: block;
@@ -203,12 +212,104 @@
   z-index: var(--hf-z-modal);
 }
 .heyfam-modal__dialog {
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-5);
   max-width: 480px; width: 100%;
   box-shadow: var(--hf-shadow-lg);
   display: grid; gap: var(--hf-space-4);
+}
+.heyfam-modal__actions {
+  display: flex;
+  gap: var(--hf-space-2);
+  justify-content: flex-end;
+}
+.heyfam-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hf-space-2);
+}
+.heyfam-modal__title {
+  margin: 0;
+  font-size: var(--hf-font-size-lg);
+  font-weight: var(--hf-font-weight-semibold);
+}
+.heyfam-modal__body {
+  margin: 0;
+  color: var(--hf-color-fg-muted);
+  font-size: var(--hf-font-size-sm);
+}
+.heyfam-modal__error {
+  margin: 0;
+  color: var(--hf-color-danger);
+  font-size: var(--hf-font-size-sm);
+}
+/* These two variants default to hidden in CSS — IAPI flips them on with
+ * `.is-open`. This avoids the FOUC that you get with the inverse pattern
+ * (markup starts class-less, CSS shows it, JS later hides it). */
+.heyfam-modal--composer,
+.heyfam-modal--confirm {
+  display: none;
+}
+.heyfam-modal--composer.is-open,
+.heyfam-modal--confirm.is-open {
+  display: grid;
+}
+/* When the composer is mounted inside the editor modal, the dialog provides
+ * the card chrome — strip the composer's own border/background so we don't
+ * double up. The focus ring is also suppressed since the dialog has shadow. */
+.heyfam-modal--composer .heyfam-modal__dialog {
+  max-width: 560px;
+}
+.heyfam-modal--composer .heyfam-composer {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.heyfam-modal--composer .heyfam-composer::after {
+  display: none;
+}
+/* Lock body scroll while a modal is open so iOS doesn't bleed scroll through. */
+body.heyfam-modal-open { overflow: hidden; }
+
+/* Camera + crop modals */
+.heyfam-camera__stage {
+  display: grid;
+  place-items: center;
+  background: var(--hf-color-fg);
+  border-radius: var(--hf-radius-md);
+  overflow: hidden;
+  aspect-ratio: 1;
+  width: 100%;
+}
+.heyfam-camera__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Mirror like a selfie cam. */
+  transform: scaleX(-1);
+}
+.heyfam-camera__error {
+  margin: 0;
+  padding: var(--hf-space-4);
+  color: var(--hf-color-bg);
+  font-size: var(--hf-font-size-sm);
+  text-align: center;
+}
+
+.heyfam-crop__stage {
+  /* CropperJS replaces the <img> with a sized wrapper; constrain height here. */
+  max-height: 60vh;
+  background: var(--hf-color-fg);
+  border-radius: var(--hf-radius-md);
+  overflow: hidden;
+}
+.heyfam-crop__image {
+  display: block;
+  max-width: 100%;
+  /* CropperJS expects a max-width on the image so it can compute container size. */
 }
 
 /* ==================================================================
@@ -218,15 +319,42 @@
 .heyfam-header {
   padding: var(--hf-space-3) var(--hf-space-4);
   border-bottom: 1px solid var(--hf-color-border);
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
 }
 
-.heyfam-landing { text-align: center; padding-block: var(--hf-space-7); display: grid; gap: var(--hf-space-4); }
+.heyfam-landing { padding-block: var(--hf-space-7); }
+.heyfam-landing__inner { display: grid; gap: var(--hf-space-5); }
+.heyfam-landing__intro { text-align: center; }
+.heyfam-landing__cta { display: flex; gap: var(--hf-space-2); justify-content: center; flex-wrap: wrap; }
+
+.heyfam-landing__fams { display: grid; gap: var(--hf-space-4); }
+.heyfam-landing__fams h1 { margin: 0; font-size: var(--hf-font-size-xl); }
+.heyfam-landing__fams-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--hf-space-2);
+}
+.heyfam-landing__fam {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--hf-space-4);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-lg);
+  text-decoration: none; color: var(--hf-color-fg);
+  background: var(--hf-color-bg);
+  transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-landing__fam:hover { border-color: var(--hf-color-accent); color: var(--hf-color-accent); }
+.heyfam-landing__hint { margin: 0; color: var(--hf-color-fg-muted); font-size: var(--hf-font-size-sm); }
+.heyfam-landing__hint a { color: var(--hf-color-accent); }
 
 .heyfam-feed { display: grid; gap: var(--hf-space-4); padding-block: var(--hf-space-4); }
+/* All feed children fill the grid column so composer + posts share one width. */
+.heyfam-feed > * { width: 100%; }
+.heyfam-feed__list { display: grid; gap: var(--hf-space-4); grid-template-columns: minmax(0, 1fr); }
+/* WP wraps every template-part in a div; let cards participate directly in the grid. */
+.heyfam-feed__list > .wp-block-template-part { display: contents; }
 
 .heyfam-post-card {
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border: 1px solid var(--hf-color-border);
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
@@ -243,17 +371,70 @@
   font-weight: var(--hf-font-weight-semibold);
 }
 .heyfam-post-card__photo { max-width: 100%; border-radius: var(--hf-radius-md); }
-.heyfam-post-card__permalink {
+.heyfam-post-card__actions {
   margin-left: auto;
-  color: var(--hf-color-fg-subtle);
-  font-size: var(--hf-font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--hf-space-1);
 }
+
+/* --- Menu component ------------------------------------------------ */
+.heyfam-menu { position: relative; }
+.heyfam-menu__list {
+  position: absolute;
+  top: calc(100% + var(--hf-space-1));
+  right: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: var(--hf-space-1);
+  list-style: none;
+  background: var(--hf-color-bg);
+  border: 1px solid var(--hf-color-border-strong);
+  border-radius: var(--hf-radius-md);
+  box-shadow: var(--hf-shadow-md);
+  z-index: var(--hf-z-menu);
+  display: none;
+}
+.heyfam-menu__list.is-open { display: block; }
+.heyfam-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-space-2);
+  width: 100%;
+  padding: var(--hf-space-2) var(--hf-space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--hf-radius-sm);
+  color: var(--hf-color-fg);
+  font: inherit;
+  font-size: var(--hf-font-size-sm);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-menu__item:hover { background: var(--hf-color-accent-soft); }
+.heyfam-menu__item--danger { color: var(--hf-color-danger); }
+.heyfam-menu__item--danger:hover { background: color-mix(in srgb, var(--hf-color-danger) 8%, var(--hf-color-bg)); }
 .heyfam-post-card__reactions {
   display: flex; gap: var(--hf-space-3); align-items: center; flex-wrap: wrap;
 }
 .heyfam-post-card .heyfam-comments {
   border-top: 1px solid var(--hf-color-border);
+  /* Outdent past the post-card's padding so the divider runs edge-to-edge,
+   * then re-pad inside so the comment content lines up with the post body. */
+  margin-inline: calc(-1 * var(--hf-space-4));
+  margin-bottom: calc(-1 * var(--hf-space-4));
+  padding-inline: var(--hf-space-4);
+  padding-bottom: var(--hf-space-4);
   margin-top: var(--hf-space-2); padding-top: var(--hf-space-3);
+}
+/* Empty-comments case: drop the divider + outdent so the lone comment form
+ * sits flush within the card's normal padding, no orphan border line. */
+.heyfam-post-card .heyfam-comments:not(:has(.heyfam-comment)) {
+  border-top: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .heyfam-feed__empty { color: var(--hf-color-fg-muted); }
@@ -262,75 +443,142 @@
   display: flex; gap: var(--hf-space-2);
   padding: 0; margin: 0; list-style: none; flex-wrap: wrap;
 }
-.heyfam-reactions button {
+.heyfam-reactions__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hf-space-1);
+  height: 1.75rem;
+  padding: 0 var(--hf-space-2);
   border: 1px solid var(--hf-color-border);
-  border-radius: var(--hf-radius-pill);
-  padding: 0.15rem var(--hf-space-3);
-  background: var(--hf-color-bg-elev);
+  border-radius: var(--hf-radius-md);
+  background: var(--hf-color-bg);
+  color: var(--hf-color-fg);
   cursor: pointer;
   font: inherit;
-  transition: background var(--hf-motion-fast) var(--hf-ease-standard);
+  transition:
+    background var(--hf-motion-fast) var(--hf-ease-standard),
+    border-color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-reactions button:hover { background: var(--hf-color-accent-soft); }
+.heyfam-reactions__chip:hover { background: var(--hf-color-accent-soft); }
+.heyfam-reactions__chip.is-mine {
+  border-color: transparent;
+  background: var(--hf-color-accent-soft);
+}
+.heyfam-reactions__chip-count {
+  font-size: var(--hf-font-size-xs);
+  font-weight: var(--hf-font-weight-semibold);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-reactions__chip--add {
+  width: 1.75rem;
+  padding: 0;
+  justify-content: center;
+  color: var(--hf-color-fg-muted);
+}
+
+/* Tooltip — opt in by setting [data-tooltip="text"] on any element.
+ * Reveals on :hover and :focus-visible. The element is auto-positioned so
+ * `position: relative` is applied for you. Empty values render nothing. */
+[data-tooltip] { position: relative; }
+[data-tooltip]:not([data-tooltip=""])::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + var(--hf-space-1));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hf-color-fg);
+  color: var(--hf-color-bg);
+  padding: var(--hf-space-1) var(--hf-space-2);
+  border-radius: var(--hf-radius-sm);
+  font-size: var(--hf-font-size-xs);
+  line-height: var(--hf-line-height-tight);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--hf-motion-fast) var(--hf-ease-standard);
+  z-index: var(--hf-z-menu);
+  box-shadow: var(--hf-shadow-md);
+}
+[data-tooltip]:not([data-tooltip=""]):hover::after,
+[data-tooltip]:not([data-tooltip=""]):focus-visible::after {
+  opacity: 1;
+}
 
 .heyfam-composer {
-  display: grid; gap: var(--hf-space-2);
-  padding: var(--hf-space-3);
-  background: var(--hf-color-bg-elev);
+  position: relative;
+  display: grid; gap: var(--hf-space-3);
+  padding: var(--hf-space-4);
+  background: var(--hf-color-bg);
   border: 1px solid var(--hf-color-border);
   border-radius: var(--hf-radius-lg);
 }
+/* Focus ring is a separate pseudo-element pinned around the card so it
+ * doesn't compose with the card's own border. The textarea inside has
+ * `outline: none` so the ring only appears on the card edge. */
+.heyfam-composer::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * (var(--hf-focus-offset) + var(--hf-focus-width)));
+  border: var(--hf-focus-width) solid var(--hf-focus-color);
+  border-radius: calc(var(--hf-radius-lg) + var(--hf-focus-offset) + var(--hf-focus-width));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-composer:focus-within::after { opacity: 1; }
 .heyfam-composer textarea {
-  resize: vertical; padding: var(--hf-space-2);
-  border: 1px solid var(--hf-color-border);
-  border-radius: var(--hf-radius-md);
-  font: inherit;
-  background: var(--hf-color-bg);
-}
-.heyfam-composer__photo {
-  font-size: var(--hf-font-size-sm);
-  color: var(--hf-color-fg-muted);
-  cursor: pointer;
-}
-.heyfam-composer button {
-  align-self: end;
-  padding: var(--hf-space-2) var(--hf-space-4);
+  /* JS auto-grows the height; the card carries the visual chrome. */
+  resize: none;
+  padding: 0;
   border: 0;
-  background: var(--hf-color-accent);
-  color: var(--hf-color-accent-fg);
-  border-radius: var(--hf-radius-pill);
-  cursor: pointer;
+  background: transparent;
+  font: inherit;
+  color: var(--hf-color-fg);
+}
+.heyfam-composer textarea:focus,
+.heyfam-composer textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.heyfam-composer__photo { cursor: pointer; }
+.heyfam-composer__sending {
+  display: none;
+  align-items: center;
+  gap: var(--hf-space-1);
+}
+.heyfam-composer__sending.is-active { display: inline-flex; }
+/* Tools (image, poll) sit just before the Send button, all on the right. */
+.heyfam-composer__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--hf-space-2);
+}
+.heyfam-composer__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-space-1);
 }
 
-.heyfam-fam-picker { position: relative; }
-.heyfam-fam-picker__toggle {
-  background: var(--hf-color-bg-elev);
-  border: 1px solid var(--hf-color-border-strong);
-  border-radius: var(--hf-radius-md);
-  padding: var(--hf-space-2) var(--hf-space-3);
-  cursor: pointer;
-  font: inherit;
-  color: var(--hf-color-fg);
+.heyfam-header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--hf-space-3);
+  font-size: var(--hf-font-size-sm);
 }
-.heyfam-fam-picker__menu {
-  position: absolute; right: 0; top: calc(100% + var(--hf-space-1));
-  min-width: 200px;
-  background: var(--hf-color-bg-elev);
-  border: 1px solid var(--hf-color-border-strong);
-  border-radius: var(--hf-radius-md);
-  padding: var(--hf-space-2);
-  list-style: none;
-  box-shadow: var(--hf-shadow-md);
-  z-index: var(--hf-z-menu);
-}
-.heyfam-fam-picker__menu a {
-  display: block;
-  padding: var(--hf-space-2) var(--hf-space-2);
-  border-radius: var(--hf-radius-sm);
+.heyfam-header-nav a {
+  color: var(--hf-color-fg-muted);
   text-decoration: none;
-  color: var(--hf-color-fg);
 }
-.heyfam-fam-picker__menu a:hover { background: var(--hf-color-accent-soft); }
+.heyfam-header-nav a:hover { color: var(--hf-color-accent); }
+.heyfam-header-nav a + a::before {
+  content: '';
+  display: inline-block;
+  width: 1px; height: 0.8em;
+  margin-right: var(--hf-space-3);
+  background: var(--hf-color-border-strong);
+  vertical-align: middle;
+}
 
 .heyfam-single { display: grid; gap: var(--hf-space-4); padding-block: var(--hf-space-4); }
 
@@ -343,10 +591,6 @@
   display: grid;
   grid-template-columns: var(--hf-avatar-size) 1fr;
   gap: var(--hf-space-3);
-  background: var(--hf-color-bg-elev);
-  border: 1px solid var(--hf-color-border);
-  border-radius: var(--hf-radius-md);
-  padding: var(--hf-space-3);
 }
 .heyfam-comment[data-depth="1"] { margin-left: var(--hf-space-5); }
 .heyfam-comment[data-depth="2"] { margin-left: calc(var(--hf-space-5) * 2); }
@@ -355,16 +599,14 @@
 .heyfam-comment__main { display: grid; gap: var(--hf-space-1); min-width: 0; }
 .heyfam-comment__header {
   display: flex; gap: var(--hf-space-2);
-  align-items: baseline;
+  align-items: center;
   font-size: var(--hf-font-size-sm);
   color: var(--hf-color-fg-muted);
 }
 .heyfam-comment__header strong {
   color: var(--hf-color-fg);
-  font-size: var(--hf-font-size-md);
   font-weight: var(--hf-font-weight-semibold);
 }
-.heyfam-comment__sep { opacity: 0.5; }
 .heyfam-comment__attribution {
   margin: 0;
   font-size: var(--hf-font-size-sm);
@@ -375,14 +617,6 @@
 .heyfam-comment__footer {
   display: flex; gap: var(--hf-space-3); align-items: center; flex-wrap: wrap;
 }
-.heyfam-comment__reply {
-  background: none; border: 0;
-  padding: 0.15rem var(--hf-space-2);
-  color: var(--hf-color-fg-muted);
-  font: inherit; cursor: pointer;
-}
-.heyfam-comment__reply:hover { color: var(--hf-color-fg); }
-.heyfam-comment__react { font-weight: var(--hf-font-weight-semibold); }
 
 .heyfam-comment-form { display: grid; gap: var(--hf-space-2); }
 .heyfam-comment-form textarea {
@@ -392,18 +626,43 @@
   font: inherit; width: 100%;
   background: var(--hf-color-bg);
 }
-.heyfam-comment-form__actions { display: flex; gap: var(--hf-space-2); justify-content: end; }
-.heyfam-comment-form button {
-  padding: var(--hf-space-2) var(--hf-space-4); border: 0;
-  background: var(--hf-color-accent); color: var(--hf-color-accent-fg);
-  border-radius: var(--hf-radius-pill); cursor: pointer; font: inherit;
+/* Comment textareas auto-grow via JS; kill the OS resize handle. */
+/* `display: block` collapses the inline-baseline descender gap below the textarea
+ * so the wrapper height matches the textarea height — needed for the
+ * absolute-positioned send button to land flush with the bottom border. */
+.heyfam-comment-form .heyfam-textarea { resize: none; display: block; }
+
+/* Root + inline share the same shape: avatar | (textarea with overlaid send). */
+.heyfam-comment-form--root,
+.heyfam-comment-form--inline.is-open {
+  display: grid;
+  grid-template-columns: var(--hf-avatar-size) 1fr;
+  gap: var(--hf-space-3);
+  align-items: start;
 }
-.heyfam-comment-form button[type="button"] {
-  background: transparent; color: var(--hf-color-fg-muted);
-}
+.heyfam-comment-form--root   { margin-top: var(--hf-space-3); }
 .heyfam-comment-form--inline { display: none; margin-top: var(--hf-space-2); }
-.heyfam-comment-form--inline.is-open { display: grid; }
-.heyfam-comment-form--root { margin-top: var(--hf-space-3); }
+.heyfam-comment-form__avatar { margin-top: var(--hf-space-1); }
+.heyfam-comment-form__field  { position: relative; min-width: 0; }
+.heyfam-comment-form .heyfam-textarea {
+  /* Reserve room for the absolute-positioned send button (2.5rem + gutter). */
+  padding-right: calc(2.5rem + var(--hf-space-2));
+  /* 2.5rem button + 2px above + 2px below = 2.75rem hairline halo around the
+   * button when the textarea is at its minimum (single-line) state. */
+  min-height: 2.75rem;
+}
+.heyfam-comment-form__send {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  /* Concentric: inner radius = outer textarea radius − inset, so the curves nest. */
+  border-radius: calc(var(--hf-radius-md) - 2px);
+}
+/* Only show the send button once the user has typed something — placeholder
+ * is visible exactly when the textarea is empty. */
+.heyfam-comment-form .heyfam-textarea:placeholder-shown + .heyfam-comment-form__send {
+  display: none;
+}
 
 /* --- Auth screens ------------------------------------------------- */
 .heyfam-auth { max-width: 420px; padding-block: var(--hf-space-6); display: grid; gap: var(--hf-space-4); }
@@ -420,7 +679,7 @@
   padding: var(--hf-space-2) var(--hf-space-3);
   border: 1px solid var(--hf-color-border-strong);
   border-radius: var(--hf-radius-md);
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   color: var(--hf-color-fg);
 }
 .heyfam-auth input:focus-visible {
@@ -446,14 +705,76 @@
 .heyfam-auth .dev-hint { font-size: var(--hf-font-size-sm); color: var(--hf-color-fg-subtle); }
 
 /* --- Account screen ---------------------------------------------- */
-.heyfam-account { display: grid; gap: var(--hf-space-5); padding-block: var(--hf-space-4); }
+.heyfam-account { display: grid; padding-block: var(--hf-space-4); }
+/* The IAPI store wrapper carries the visible layout: it's the direct child WP's
+ * constrained-layout pins to contentSize, and its own grid spaces the sections. */
+.heyfam-account > [data-wp-interactive="heyfam/account"] {
+  display: grid;
+  gap: var(--hf-space-5);
+}
 .heyfam-account__fam {
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border: 1px solid var(--hf-color-border);
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
 }
-.heyfam-account__fam h2 { margin-top: 0; margin-bottom: var(--hf-space-3); }
+.heyfam-account__fam-rename {
+  display: grid;
+  gap: var(--hf-space-2);
+  margin-bottom: var(--hf-space-4);
+}
+.heyfam-account__fam-rename-actions {
+  display: flex;
+  gap: var(--hf-space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+.heyfam-account__fam-open {
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+  text-decoration: none;
+}
+.heyfam-account__fam-open:hover { color: var(--hf-color-accent); }
+.heyfam-account__invite {
+  display: grid;
+  gap: var(--hf-space-4);
+  padding-block: var(--hf-space-4);
+  border-top: 1px solid var(--hf-color-border);
+  border-bottom: 1px solid var(--hf-color-border);
+  margin-block: var(--hf-space-4);
+}
+.heyfam-account__invite h3 {
+  margin: 0;
+  font-size: var(--hf-font-size-md);
+}
+.heyfam-account__invite-link { display: grid; gap: var(--hf-space-2); }
+.heyfam-account__invite-link .heyfam-input[readonly] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--hf-font-size-sm);
+  cursor: text;
+}
+.heyfam-account__invite-actions {
+  display: flex; gap: var(--hf-space-2); flex-wrap: wrap;
+}
+.heyfam-account__invite-qr {
+  display: grid; place-items: center;
+  padding: var(--hf-space-3);
+  background: var(--hf-color-bg);
+  border: 1px solid var(--hf-color-border);
+  border-radius: var(--hf-radius-md);
+}
+.heyfam-account__invite-qr svg { display: block; max-width: 192px; height: auto; }
+.heyfam-account__invite-send { display: grid; gap: var(--hf-space-3); }
+.heyfam-account__invite-send-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--hf-space-3);
+}
+.heyfam-account__invite-status {
+  margin: 0;
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+
 .heyfam-account__prefs {
   display: grid; grid-template-columns: 1fr repeat(3, auto);
   gap: var(--hf-space-1) var(--hf-space-4); align-items: center;
@@ -467,7 +788,7 @@
 
 /* --- Emoji picker (third party) ---------------------------------- */
 .heyfam-emoji-picker {
-  --background:                var(--hf-color-bg-elev);
+  --background:                var(--hf-color-bg);
   --border-color:              var(--hf-color-border);
   --border-radius:             var(--hf-radius-lg);
   --button-active-background:  var(--hf-color-accent-soft);
@@ -507,7 +828,7 @@
   right: 0;
   width: 14rem;
   padding: var(--hf-space-3) var(--hf-space-4);
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border: 1px solid var(--hf-color-border);
   border-radius: var(--hf-radius-lg);
   box-shadow: var(--hf-shadow-lg);
@@ -587,7 +908,7 @@
   font-weight: var(--hf-font-weight-semibold);
 }
 .heyfam-stepper li.is-current {
-  background: var(--hf-color-bg-elev);
+  background: var(--hf-color-bg);
   border-color: var(--hf-color-border);
   color: var(--hf-color-fg);
 }
@@ -597,7 +918,7 @@
 }
 .heyfam-stepper li.is-done .heyfam-stepper__num {
   background: var(--hf-color-fg-muted);
-  color: var(--hf-color-bg-elev);
+  color: var(--hf-color-bg);
 }
 .heyfam-stepper__label { white-space: nowrap; }
 
@@ -639,8 +960,11 @@
 }
 
 /* === Nudge banner ================================================= */
+/* Default-hidden so it never flashes before JS decides to show it (init
+ * checks dismissal, onboarding age, etc). The flex layout only applies
+ * when `.is-visible` is added by the IAPI directive. */
 .heyfam-nudge {
-  display: flex;
+  display: none;
   gap: var(--hf-space-3);
   align-items: center;
   justify-content: space-between;
@@ -650,6 +974,7 @@
   border: 1px solid var(--hf-color-border);
   color: var(--hf-color-fg);
 }
+.heyfam-nudge.is-visible { display: flex; }
 .heyfam-nudge a { color: var(--hf-color-accent); }
 .heyfam-nudge button {
   background: transparent;
@@ -662,19 +987,16 @@
 }
 .heyfam-nudge button:hover { color: var(--hf-color-fg); }
 
-/* === Account invite entry ========================================= */
-.heyfam-account__invite {
-  background: var(--hf-color-bg-elev);
-  border: 1px solid var(--hf-color-border);
-  border-radius: var(--hf-radius-lg);
-  padding: var(--hf-space-4);
+/* === Account — start another family ============================= */
+.heyfam-account__new-fam {
+  display: grid;
+  gap: var(--hf-space-2);
+  justify-items: start;
+  padding-block: var(--hf-space-3);
+  border-top: 1px solid var(--hf-color-border);
 }
-.heyfam-account__invite h2 { margin-top: 0; }
-.heyfam-account__invite-link {
-  display: inline-block;
-  margin-top: var(--hf-space-1);
-  color: var(--hf-color-accent);
-}
+.heyfam-account__new-fam h2 { margin: 0; font-size: var(--hf-font-size-lg); }
+.heyfam-account__new-fam p { margin: 0; color: var(--hf-color-fg-muted); font-size: var(--hf-font-size-sm); }
 
 /* === Composer multi-photo additions =============================== */
 /* The base .heyfam-composer above defines display/padding/background/
@@ -688,7 +1010,7 @@
 }
 .heyfam-composer.is-drop-target {
   outline-color: var(--hf-color-accent);
-  background: color-mix(in srgb, var(--hf-color-accent) 8%, var(--hf-color-bg-elev));
+  background: color-mix(in srgb, var(--hf-color-accent) 8%, var(--hf-color-bg));
 }
 
 .heyfam-composer__previews {
@@ -900,31 +1222,13 @@ body.heyfam-lightbox-open { overflow: hidden; }
 .heyfam-lightbox__close:disabled { opacity: 0.3; cursor: default; }
 
 /* === Composer — poll mode ========================================= */
-.heyfam-composer__poll-toggle {
-  background: none;
-  border: 1px solid var(--hf-color-border);
-  border-radius: var(--hf-radius-pill);
-  padding: var(--hf-space-2) var(--hf-space-3);
-  color: var(--hf-color-fg-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--hf-font-size-sm);
-  transition: color var(--hf-motion-fast) var(--hf-ease-standard),
-              border-color var(--hf-motion-fast) var(--hf-ease-standard);
-}
-.heyfam-composer__poll-toggle:hover {
-  color: var(--hf-color-fg);
-  border-color: var(--hf-color-border-strong);
-}
-.heyfam-composer--poll .heyfam-composer__poll-toggle {
-  color: var(--hf-color-accent);
-  border-color: var(--hf-color-accent);
-}
-
+/* Default hidden so the poll fields never flash on load. The IAPI
+ * directive adds `.is-active` when the composer is in poll mode. */
 .heyfam-composer__poll {
-  display: grid;
+  display: none;
   gap: var(--hf-space-2);
 }
+.heyfam-composer__poll.is-active { display: grid; }
 .heyfam-composer__options {
   list-style: none;
   padding: 0;
@@ -982,11 +1286,6 @@ body.heyfam-lightbox-open { overflow: hidden; }
 .heyfam-composer__anon { cursor: pointer; }
 
 /* === Post card — poll widget ====================================== */
-.heyfam-post-card--poll {
-  /* Small accent left edge so polls stand out in the feed. */
-  border-left: 3px solid var(--hf-color-accent);
-}
-
 .heyfam-poll {
   display: grid;
   gap: var(--hf-space-2);
@@ -1090,7 +1389,7 @@ body.heyfam-lightbox-open { overflow: hidden; }
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid var(--hf-color-bg-elev);
+  border: 2px solid var(--hf-color-bg);
 }
 
 .heyfam-poll__meta {

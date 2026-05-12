@@ -6,16 +6,22 @@
   <aside class="heyfam-nudge"
          data-wp-interactive="heyfam/nudge"
          data-wp-init="callbacks.init"
-         data-wp-class--is-hidden="!state.visible">
+         data-wp-class--is-visible="state.visible">
     <div>
       <strong>Invite the rest of your fam.</strong>
       Add their numbers anytime from your <a href="/account">account page</a>.
     </div>
-    <button type="button" data-wp-on--click="actions.dismiss" aria-label="Dismiss">×</button>
+    <button type="button" data-wp-on--click="actions.dismiss" aria-label="Dismiss" data-tooltip="Dismiss">×</button>
   </aside>
   <!-- /wp:html -->
 
-  <!-- wp:template-part {"slug":"composer"} /-->
+  <!-- wp:html -->
+  <div class="heyfam-composer-inline"
+       data-wp-interactive="heyfam/composer"
+       data-wp-class--is-hidden="state.editorOpen">
+    <!-- wp:template-part {"slug":"composer"} /-->
+  </div>
+  <!-- /wp:html -->
 
   <!-- wp:html -->
   <section class="heyfam-feed__list"
@@ -25,5 +31,8 @@
     <p class="heyfam-feed__empty" data-wp-class--is-hidden="state.hasPosts">No posts yet — say hey to your fam.</p>
   </section>
   <!-- /wp:html -->
+
+  <!-- wp:template-part {"slug":"post-editor"} /-->
+  <!-- wp:template-part {"slug":"post-delete"} /-->
 </div>
 <!-- /wp:group -->
