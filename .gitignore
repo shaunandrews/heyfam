@@ -1,8 +1,6 @@
 .superpowers/
 .DS_Store
 node_modules/
-vendor/
-build/
 *.log
 .env
 .env.local
@@ -10,9 +8,30 @@ build/
 coverage/
 tests/.playwright/
 tests/.env.test
-vendor/wordpress/
+wp-content/
+
+# Build artifacts — gitignored by default…
+build/
+vendor/
+# …except the two that Pressable's GitHub deploy needs to find committed.
+!themes/heyfam-theme/build/
+!plugins/heyfam-core/vendor/
+
+# …but never commit dev-only PHP deps that reappear after a non-`--no-dev`
+# composer install. Anything we forget here just shows up as untracked; not
+# the end of the world, but kept in sync where possible.
+plugins/heyfam-core/vendor/phpunit/
+plugins/heyfam-core/vendor/yoast/
+plugins/heyfam-core/vendor/sebastian/
+plugins/heyfam-core/vendor/myclabs/
+plugins/heyfam-core/vendor/nikic/
+plugins/heyfam-core/vendor/phar-io/
+plugins/heyfam-core/vendor/theseer/
+plugins/heyfam-core/vendor/doctrine/
+
+# Test artifacts inside the plugin
 plugins/heyfam-core/tests/heyfam_test.sqlite
 plugins/heyfam-core/tests/debug.txt
 plugins/heyfam-core/tests/heyfam_test.sqlite-shm
 plugins/heyfam-core/tests/heyfam_test.sqlite-wal
-wp-content/
+vendor/wordpress/

@@ -1,0 +1,1 @@
+{"version":2,"defects":{"InvitesTest::test_hash_is_stable":8},"times":{"InvitesTest::test_generate_code_is_url_safe_and_unique":0.001,"InvitesTest::test_hash_is_stable":0.005}}
