@@ -113,6 +113,101 @@ final class Icons {
 				. '<path d="M16 5h6"/>'
 				. '<path d="M19 2v6"/>',
 		],
+
+		// Marketing icons — used in landing feature pills + trust badges.
+		// Stroke-style so they inherit currentColor and look hand-drawn-ish
+		// when paired with the painted-edge filter.
+		'chat-bubble' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+		],
+		'calendar' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<rect width="18" height="18" x="3" y="4" rx="2"/>'
+				. '<path d="M16 2v4"/>'
+				. '<path d="M8 2v4"/>'
+				. '<path d="M3 10h18"/>'
+				. '<path d="m9 16 2 2 4-4"/>',
+		],
+		'checklist' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<rect width="6" height="6" x="3" y="4" rx="1"/>'
+				. '<path d="m5 6 1 1 2-2"/>'
+				. '<rect width="6" height="6" x="3" y="14" rx="1"/>'
+				. '<path d="m5 16 1 1 2-2"/>'
+				. '<path d="M13 6h8"/>'
+				. '<path d="M13 16h8"/>',
+		],
+		'lock' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>'
+				. '<path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+		],
+		'no-ads' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<circle cx="12" cy="12" r="10"/>'
+				. '<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
+		],
+		'smile' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<circle cx="12" cy="12" r="10"/>'
+				. '<path d="M8 14s1.5 2 4 2 4-2 4-2"/>'
+				. '<line x1="9" x2="9.01" y1="9" y2="9"/>'
+				. '<line x1="15" x2="15.01" y1="9" y2="9"/>',
+		],
+
+		// Doodles — fill-style hand-drawn decorations sprinkled around the
+		// hero and section dividers. They use the painted-edge filter to
+		// look hand-painted rather than vector-clean.
+		'doodle-heart' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'fill',
+			'content' => '<path d="M12 21s-7-4.5-9.5-9.5C.5 7 4 3 7.5 4.5 9.5 5.3 12 8 12 8s2.5-2.7 4.5-3.5C20 3 23.5 7 21.5 11.5 19 16.5 12 21 12 21z" fill="currentColor"/>',
+		],
+		'doodle-star' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'fill',
+			'content' => '<path d="M12 3l2.6 6.3 6.7.5-5.1 4.4 1.6 6.5-5.8-3.6-5.8 3.6 1.6-6.5-5.1-4.4 6.7-.5z" fill="currentColor"/>',
+		],
+		'doodle-sparkle' => [
+			'viewBox' => '0 0 24 24',
+			'paint'   => 'stroke',
+			'content' => '<path d="M12 3v6"/>'
+				. '<path d="M12 15v6"/>'
+				. '<path d="M3 12h6"/>'
+				. '<path d="M15 12h6"/>'
+				. '<path d="m6 6 3 3"/>'
+				. '<path d="m15 15 3 3"/>'
+				. '<path d="m18 6-3 3"/>'
+				. '<path d="m9 15-3 3"/>',
+		],
+		'doodle-scribble-underline' => [
+			'viewBox' => '0 0 200 20',
+			'paint'   => 'stroke',
+			'content' => '<path d="M2 12 C 30 4, 60 18, 90 10 S 140 4, 170 14 S 195 8, 198 10" stroke-width="4" stroke-linecap="round" fill="none"/>',
+		],
+		'doodle-tape' => [
+			'viewBox' => '0 0 60 24',
+			'paint'   => 'fill',
+			'content' => '<path d="M2 6 L58 4 L57 18 L3 20 Z" fill="currentColor" fill-opacity="0.75"/>'
+				. '<path d="M10 5 L10 19 M20 5 L20 19 M30 4 L30 19 M40 4 L40 18 M50 4 L50 18" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"/>',
+		],
+		'doodle-brush-stroke' => [
+			'viewBox' => '0 0 320 280',
+			'paint'   => 'fill',
+			'content' => '<path d="M30 50 Q 70 20, 140 30 T 280 50 Q 310 90, 300 160 T 270 240 Q 200 260, 130 250 T 30 230 Q 10 180, 20 110 T 30 50 Z" fill="currentColor"/>',
+		],
+		'doodle-brush-streak' => [
+			'viewBox' => '0 0 200 40',
+			'paint'   => 'fill',
+			'content' => '<path d="M5 18 Q 50 8, 100 16 T 195 22 L 198 32 Q 100 38, 5 28 Z" fill="currentColor"/>',
+		],
 	];
 
 	public static function register(): void {
