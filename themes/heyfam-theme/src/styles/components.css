@@ -406,45 +406,563 @@ body.heyfam-modal-open { overflow: hidden; }
   background: var(--hf-color-bg);
 }
 
-.heyfam-landing { padding-block: var(--hf-space-7); }
-.heyfam-landing__inner { display: grid; gap: var(--hf-space-5); }
-.heyfam-landing__intro { text-align: center; }
-.heyfam-landing__cta { display: flex; gap: var(--hf-space-2); justify-content: center; flex-wrap: wrap; }
+/* ==================================================================
+ * Marketing — landing + stub pages. Painted-paper marketing aesthetic.
+ * Display headlines use Caveat; body copy stays on system fonts.
+ * ================================================================== */
 
-.heyfam-landing__fams { display: grid; gap: var(--hf-space-4); }
-.heyfam-landing__fams h1 { margin: 0; font-size: var(--hf-font-size-xl); }
-.heyfam-landing__fams-list {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; gap: var(--hf-space-2);
+/* Display class — any element that should use the handwritten font. */
+.heyfam-display {
+  font-family: var(--hf-font-display);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.005em;
 }
-.heyfam-landing__fam {
-  --hf-fam-border: var(--hf-color-pencil);
+
+/* --- Marketing header (logo + nav + CTA) -------------------------- */
+.heyfam-marketing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hf-space-5);
+  padding: var(--hf-space-4) var(--hf-space-5);
+  max-width: 1180px;
+  margin-inline: auto;
+}
+.heyfam-marketing-nav {
+  display: flex; gap: var(--hf-space-5);
+  font-size: var(--hf-font-size-md);
+}
+.heyfam-marketing-nav a {
+  color: var(--hf-color-fg);
+  font-weight: var(--hf-font-weight-medium);
+}
+.heyfam-marketing-nav a:hover { color: var(--hf-color-accent); }
+.heyfam-marketing-cta { padding-inline: var(--hf-space-5); }
+@media (max-width: 720px) {
+  .heyfam-marketing-header { flex-wrap: wrap; gap: var(--hf-space-3); }
+  .heyfam-marketing-nav { order: 3; width: 100%; justify-content: center; gap: var(--hf-space-4); font-size: var(--hf-font-size-sm); }
+}
+
+/* --- HeyFam logo (used in marketing header + chat mockup) --------- */
+.heyfam-logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--hf-font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--hf-color-fg);
+  letter-spacing: -0.02em;
+}
+.heyfam-logo__fam { color: var(--hf-color-accent); }
+.heyfam-logo:hover { color: var(--hf-color-fg); }
+
+/* --- Landing wrapper ---------------------------------------------- */
+.heyfam-landing { padding-block: var(--hf-space-4) var(--hf-space-7); }
+.heyfam-landing__inner { display: grid; gap: var(--hf-space-7); }
+
+/* Logged-in "Your families" strip — pinned above the hero. Hidden by
+ * default until the IAPI store toggles state.hasFams. */
+.heyfam-landing__yourfams {
   position: relative;
   isolation: isolate;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: var(--hf-space-4);
-  border: 0;
+  display: grid; gap: var(--hf-space-2);
+  padding: var(--hf-space-3) var(--hf-space-4);
   border-radius: var(--hf-radius-lg);
-  text-decoration: none; color: var(--hf-color-fg);
-  background: transparent;
-  transition: color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-landing__fam::before {
+.heyfam-landing__yourfams::before {
   content: '';
-  position: absolute;
-  inset: 0;
-  background-color: var(--hf-color-bg);
+  position: absolute; inset: 0;
+  background-color: var(--hf-color-accent-soft);
   background-image: var(--hf-bg-paper);
   background-repeat: repeat;
-  border: 1.5px solid var(--hf-fam-border);
+  border-radius: inherit;
+  filter: var(--hf-filter-torn-soft);
+  z-index: -1;
+}
+.heyfam-landing__yourfams-title {
+  margin: 0;
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+  font-weight: var(--hf-font-weight-medium);
+}
+.heyfam-landing__yourfams-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: var(--hf-space-2);
+}
+.heyfam-landing__yourfams-chip {
+  display: inline-flex; align-items: center; gap: var(--hf-space-1);
+  padding: var(--hf-space-1) var(--hf-space-3);
+  background: var(--hf-color-bg);
+  border-radius: var(--hf-radius-pill);
+  color: var(--hf-color-fg);
+  font-size: var(--hf-font-size-sm);
+  text-decoration: none;
+}
+.heyfam-landing__yourfams-chip:hover { color: var(--hf-color-accent); }
+
+/* --- Hero --------------------------------------------------------- */
+.heyfam-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: var(--hf-space-7);
+  align-items: center;
+  padding: var(--hf-space-5) 0;
+}
+@media (max-width: 900px) {
+  .heyfam-hero { grid-template-columns: 1fr; gap: var(--hf-space-5); }
+}
+
+.heyfam-hero__copy { display: grid; gap: var(--hf-space-4); }
+.heyfam-hero__headline {
+  position: relative;
+  margin: 0;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  color: var(--hf-color-accent-strong);
+  letter-spacing: 0;
+}
+.heyfam-hero__headline-emph { position: relative; display: inline-block; }
+.heyfam-hero__underline {
+  position: absolute;
+  left: 36%;
+  bottom: -0.25em;
+  width: 60%; height: 0.45em;
+  color: var(--hf-color-accent);
+  pointer-events: none;
+}
+.heyfam-hero__inline-heart {
+  position: absolute;
+  right: -0.1em;
+  top: 30%;
+  width: 0.55em; height: 0.55em;
+  color: var(--hf-color-danger);
+  transform: rotate(15deg);
+}
+.heyfam-hero__lede {
+  max-width: 38ch;
+  font-size: var(--hf-font-size-lg);
+  color: var(--hf-color-fg-muted);
+  line-height: var(--hf-line-height-normal);
+}
+.heyfam-hero__cta {
+  display: flex; flex-wrap: wrap; gap: var(--hf-space-3);
+  margin-block-start: var(--hf-space-2);
+}
+.heyfam-hero__trust {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: var(--hf-space-5);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-hero__trust li { display: inline-flex; align-items: center; gap: var(--hf-space-2); }
+.heyfam-hero__trust .hf-icon { width: 1.1em; height: 1.1em; color: var(--hf-color-fg); }
+
+/* Larger button size for marketing CTAs. */
+.heyfam-button--lg {
+  height: 3rem;
+  padding-inline: var(--hf-space-5);
+  font-size: var(--hf-font-size-md);
+  font-weight: var(--hf-font-weight-semibold);
+}
+
+/* --- Hero mockup stage -------------------------------------------- */
+.heyfam-hero__mockups {
+  position: relative;
+  min-height: 460px;
+  isolation: isolate;
+}
+.heyfam-hero__brush {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  color: var(--hf-color-accent);
+  opacity: 0.55;
+  filter: var(--hf-filter-torn-soft);
+  z-index: -1;
+  transform: rotate(-1.5deg);
+}
+
+.heyfam-hero__doodle {
+  position: absolute;
+  pointer-events: none;
+}
+.heyfam-hero__doodle--star-tl { top: 12%; right: 8%; width: 32px; height: 32px; color: #facc15; transform: rotate(-8deg); }
+.heyfam-hero__doodle--star-tr { top: 32%; right: 4%; width: 28px; height: 28px; color: #facc15; transform: rotate(20deg); }
+.heyfam-hero__doodle--star-br { bottom: 6%; left: 38%; width: 24px; height: 24px; color: #facc15; transform: rotate(10deg); }
+.heyfam-hero__doodle--heart-mid { top: 38%; left: -2%; width: 26px; height: 26px; color: var(--hf-color-success); transform: rotate(-15deg); }
+.heyfam-hero__doodle--sparkle-tl { top: 4%; left: 14%; width: 22px; height: 22px; color: #facc15; }
+.heyfam-hero__doodle--sparkle-br { bottom: 14%; right: 8%; width: 22px; height: 22px; color: #facc15; }
+.heyfam-hero__doodle--tape-tl { top: 4%; left: 26%; width: 56px; height: 22px; color: #fde68a; transform: rotate(-8deg); }
+.heyfam-hero__doodle--tape-tr { top: 18%; right: 12%; width: 56px; height: 22px; color: #fde68a; transform: rotate(12deg); }
+
+/* --- Phone-card mockups in the hero ------------------------------- */
+.heyfam-mockup {
+  position: absolute;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hf-space-2);
+  padding: var(--hf-space-3);
+  border-radius: 1.25rem;
+  box-shadow: var(--hf-shadow-lg);
+}
+.heyfam-mockup::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--hf-color-bg);
   border-radius: inherit;
   filter: var(--hf-filter-pencil);
   z-index: -1;
-  transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-landing__fam:hover { color: var(--hf-color-accent); --hf-fam-border: var(--hf-color-accent); }
-.heyfam-landing__hint { margin: 0; color: var(--hf-color-fg-muted); font-size: var(--hf-font-size-sm); }
-.heyfam-landing__hint a { color: var(--hf-color-accent); }
+.heyfam-mockup--chat {
+  top: 6%;
+  left: 6%;
+  width: 58%;
+  min-width: 230px;
+  z-index: 1;
+}
+.heyfam-mockup--poll {
+  bottom: 4%;
+  right: 4%;
+  width: 50%;
+  min-width: 210px;
+  z-index: 2;
+}
+
+.heyfam-mockup__header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-block-end: var(--hf-space-2);
+  border-bottom: 1px solid var(--hf-color-border);
+}
+.heyfam-mockup__logo {
+  font-family: var(--hf-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.heyfam-mockup__tabs {
+  display: flex; gap: var(--hf-space-3);
+  font-size: 0.7rem;
+  color: var(--hf-color-fg-muted);
+  padding-block-end: var(--hf-space-2);
+  border-bottom: 1px solid var(--hf-color-border);
+}
+.heyfam-mockup__tabs .is-active { color: var(--hf-color-accent); font-weight: 600; border-bottom: 2px solid var(--hf-color-accent); padding-bottom: 2px; }
+.heyfam-mockup__body { display: grid; gap: var(--hf-space-2); }
+.heyfam-mockup__post {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: var(--hf-space-2);
+}
+.heyfam-mockup__post--reply { padding-left: var(--hf-space-2); }
+.heyfam-mockup__post-content { display: grid; gap: 4px; font-size: 0.75rem; }
+.heyfam-mockup__post-content strong { font-size: 0.7rem; }
+.heyfam-mockup__post-content p { margin: 0; font-size: 0.75rem; line-height: 1.25; }
+.heyfam-mockup__avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  flex-shrink: 0;
+}
+.heyfam-mockup__avatar--sm { width: 22px; height: 22px; }
+.heyfam-mockup__photo {
+  height: 70px;
+  border-radius: 0.5rem;
+  background:
+    radial-gradient(circle at 30% 40%, #fbbf24 0%, transparent 40%),
+    radial-gradient(circle at 70% 60%, #f87171 0%, transparent 45%),
+    linear-gradient(160deg, #fde68a 30%, #fcd34d 70%);
+  margin-block: 2px;
+}
+.heyfam-mockup__reactions { display: flex; gap: var(--hf-space-2); font-size: 0.7rem; }
+.heyfam-mockup__compose {
+  display: flex; align-items: center; gap: var(--hf-space-2);
+  padding: var(--hf-space-2);
+  border-top: 1px solid var(--hf-color-border);
+  color: var(--hf-color-fg-subtle);
+  font-size: 0.75rem;
+}
+
+.heyfam-mockup__poll-title { display: block; font-size: 0.85rem; }
+.heyfam-mockup__poll-options {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; gap: var(--hf-space-2);
+}
+.heyfam-mockup__poll-options li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: var(--hf-space-2);
+  font-size: 0.8rem;
+}
+.heyfam-mockup__poll-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+.heyfam-mockup__poll-icon--blue   { background: #dbeafe; }
+.heyfam-mockup__poll-icon--green  { background: #dcfce7; }
+.heyfam-mockup__poll-icon--purple { background: #ede9fe; }
+.heyfam-mockup__poll-icon--peach  { background: #fed7aa; }
+.heyfam-mockup__poll-bar {
+  grid-column: 2;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--hf-color-accent) var(--w), var(--hf-color-border) var(--w));
+  align-self: end;
+}
+.heyfam-mockup__poll-count {
+  font-weight: var(--hf-font-weight-semibold);
+  color: var(--hf-color-fg-muted);
+  font-size: 0.7rem;
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-self: center;
+}
+.heyfam-mockup__poll-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.7rem;
+  color: var(--hf-color-fg-muted);
+  margin: 0;
+}
+.heyfam-mockup__poll-check { color: var(--hf-color-accent); font-weight: 700; }
+
+/* --- Features section --------------------------------------------- */
+.heyfam-features {
+  text-align: center;
+  padding-block: var(--hf-space-5);
+}
+.heyfam-features__title {
+  display: inline-flex; align-items: center; gap: var(--hf-space-3);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--hf-color-fg);
+  margin-bottom: var(--hf-space-5);
+}
+.heyfam-features__title-divider {
+  display: inline-block;
+  width: 60px; height: 3px;
+  background: var(--hf-color-danger);
+  border-radius: 2px;
+}
+.heyfam-features__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--hf-space-4);
+  grid-template-columns: repeat(5, 1fr);
+  max-width: 900px;
+  margin-inline: auto;
+}
+@media (max-width: 720px) {
+  .heyfam-features__list { grid-template-columns: repeat(2, 1fr); }
+  .heyfam-features__title { font-size: 1.1rem; }
+}
+
+.heyfam-feature {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--hf-space-4) var(--hf-space-2);
+  isolation: isolate;
+}
+.heyfam-feature__blob {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 90px; height: 90px;
+  border-radius: 22% 78% 33% 67% / 60% 30% 70% 40%;
+  z-index: -1;
+}
+.heyfam-feature__icon {
+  position: relative;
+  width: 40px; height: 40px;
+  margin-block-end: var(--hf-space-3);
+  color: var(--hf-color-fg);
+}
+.heyfam-feature strong {
+  font-size: var(--hf-font-size-md);
+  font-weight: var(--hf-font-weight-semibold);
+}
+.heyfam-feature span { font-size: var(--hf-font-size-sm); color: var(--hf-color-fg-muted); }
+
+.heyfam-feature--blue   .heyfam-feature__blob { background: #bfdbfe; }
+.heyfam-feature--yellow .heyfam-feature__blob { background: #fde68a; transform: translateX(-50%) rotate(4deg); }
+.heyfam-feature--purple .heyfam-feature__blob { background: #ddd6fe; transform: translateX(-50%) rotate(-5deg); }
+.heyfam-feature--green  .heyfam-feature__blob { background: #bbf7d0; transform: translateX(-50%) rotate(3deg); }
+.heyfam-feature--peach  .heyfam-feature__blob { background: #fed7aa; transform: translateX(-50%) rotate(-2deg); }
+
+/* --- "Why families love HeyFam" cards ----------------------------- */
+.heyfam-love { padding-block: var(--hf-space-5); }
+.heyfam-love__title {
+  text-align: center;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  margin-bottom: var(--hf-space-6);
+  position: relative;
+}
+.heyfam-love__title-emph { position: relative; display: inline-block; color: var(--hf-color-fg); }
+.heyfam-love__underline {
+  position: absolute;
+  left: 38%; top: 100%;
+  width: 12%; height: 0.4em;
+  color: var(--hf-color-accent);
+  pointer-events: none;
+}
+.heyfam-love__sparkle {
+  position: absolute;
+  right: 16%;
+  top: -0.4em;
+  width: 24px; height: 24px;
+  color: #facc15;
+  transform: rotate(20deg);
+}
+
+.heyfam-love__cards {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; gap: var(--hf-space-4);
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1080px;
+  margin-inline: auto;
+}
+@media (max-width: 900px) {
+  .heyfam-love__cards { grid-template-columns: 1fr; }
+}
+.heyfam-love__card {
+  position: relative;
+  display: grid; gap: var(--hf-space-3);
+  padding: var(--hf-space-5);
+  border-radius: var(--hf-radius-lg);
+  isolation: isolate;
+  text-align: center;
+  min-height: 360px;
+  align-content: end;
+}
+.heyfam-love__card::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  filter: var(--hf-filter-torn-soft);
+  z-index: -1;
+}
+.heyfam-love__card--blue::before  { background: #dbeafe; }
+.heyfam-love__card--cream::before { background: #fef3c7; }
+.heyfam-love__card--green::before { background: #d1fae5; }
+.heyfam-love__heading { font-size: 1.35rem; line-height: 1.1; }
+.heyfam-love__card p { font-size: var(--hf-font-size-sm); color: var(--hf-color-fg-muted); margin: 0; }
+
+.heyfam-love__preview {
+  position: absolute;
+  top: var(--hf-space-4); left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  display: grid; gap: var(--hf-space-2);
+}
+.heyfam-love__preview--chat { gap: 6px; }
+.heyfam-love__bubble {
+  display: flex; align-items: center; gap: var(--hf-space-2);
+  background: var(--hf-color-bg);
+  border-radius: 999px;
+  padding: 4px var(--hf-space-2);
+}
+.heyfam-love__bubble--1 { width: 80%; }
+.heyfam-love__bubble--2 { width: 90%; margin-left: auto; flex-direction: row-reverse; background: #c7d2fe; }
+.heyfam-love__bubble--3 { width: 60%; }
+.heyfam-love__bubble-line {
+  flex: 1; height: 6px;
+  background: var(--hf-color-border-strong);
+  border-radius: 3px;
+}
+
+.heyfam-love__preview--poll {
+  background: var(--hf-color-bg);
+  border-radius: var(--hf-radius-md);
+  padding: var(--hf-space-3);
+  text-align: left;
+  box-shadow: var(--hf-shadow-sm);
+}
+.heyfam-love__preview--poll ul {
+  list-style: none; padding: 0; margin: var(--hf-space-2) 0 0;
+  display: grid; gap: 10px;
+}
+.heyfam-love__preview--poll li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--hf-space-2);
+  font-size: 0.75rem;
+  padding-block-end: 6px;
+}
+.heyfam-love__preview--poll li > :first-child { flex-shrink: 0; }
+.heyfam-love__preview--poll li > :nth-child(2) { flex: 1; }
+.heyfam-love__preview--poll li > :last-child {
+  font-weight: 600;
+  color: var(--hf-color-fg-muted);
+}
+.heyfam-love__preview--poll .heyfam-mockup__poll-bar {
+  position: absolute;
+  bottom: 0;
+  left: calc(22px + var(--hf-space-2));
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--hf-color-accent) var(--w, 50%), var(--hf-color-border) var(--w, 50%));
+}
+
+.heyfam-love__preview--stickers {
+  height: 140px;
+  position: relative;
+}
+.heyfam-love__sticker {
+  position: absolute;
+  background: var(--hf-color-bg);
+  border-radius: 14px;
+  padding: var(--hf-space-2);
+  font-size: 1.6rem;
+  box-shadow: var(--hf-shadow-sm);
+  line-height: 1;
+}
+.heyfam-love__sticker--pizza  { top: 0;   left: 10%;  transform: rotate(-10deg); }
+.heyfam-love__sticker--thumbs { top: 0;   right: 10%; transform: rotate(8deg); }
+.heyfam-love__sticker--car    { bottom: 0; right: 14%; transform: rotate(-5deg); }
+.heyfam-love__sticker--vibes  {
+  bottom: 0; left: 14%;
+  background: #bfdbfe;
+  font-family: var(--hf-font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  transform: rotate(-8deg);
+}
+
+/* --- Footer trust line -------------------------------------------- */
+.heyfam-footer-trust {
+  display: flex; justify-content: center; gap: var(--hf-space-7);
+  padding-block: var(--hf-space-5);
+  font-size: var(--hf-font-size-sm);
+  color: var(--hf-color-fg-muted);
+  flex-wrap: wrap;
+}
+.heyfam-footer-trust span { display: inline-flex; align-items: center; gap: var(--hf-space-2); }
+.heyfam-footer-trust__heart { width: 1.1em; height: 1.1em; color: var(--hf-color-danger); }
+.heyfam-footer-trust__heart--alt { color: #facc15; }
+
+/* --- Stub marketing pages ----------------------------------------- */
+.heyfam-marketing-page { padding-block: var(--hf-space-7); }
+.heyfam-marketing-page__inner {
+  max-width: 640px;
+  margin-inline: auto;
+  text-align: center;
+  display: grid; gap: var(--hf-space-4);
+}
+.heyfam-marketing-page__title {
+  font-family: var(--hf-font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  color: var(--hf-color-accent-strong);
+  margin: 0;
+}
+.heyfam-marketing-page__lede { font-size: var(--hf-font-size-lg); color: var(--hf-color-fg-muted); }
 
 .heyfam-feed { display: grid; gap: var(--hf-space-4); padding-block: var(--hf-space-4); }
 /* All feed children fill the grid column so composer + posts share one width. */

@@ -1,35 +1,208 @@
-<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:template-part {"slug":"marketing-header"} /-->
 
-<!-- wp:group {"layout":{"type":"constrained"},"className":"heyfam-landing"} -->
+<!-- wp:group {"layout":{"type":"constrained","contentSize":"1100px"},"className":"heyfam-landing"} -->
 <div class="wp-block-group heyfam-landing">
   <!-- wp:html -->
   <div class="heyfam-landing__inner" data-wp-interactive="heyfam/landing">
-    <section class="heyfam-landing__fams" data-wp-class--is-hidden="!state.hasFams">
-      <h1>Your families</h1>
-      <ul class="heyfam-landing__fams-list">
+
+    <section class="heyfam-landing__yourfams" data-wp-class--is-hidden="!state.hasFams">
+      <h2 class="heyfam-landing__yourfams-title">Your families</h2>
+      <ul class="heyfam-landing__yourfams-list">
         <template data-wp-each="state.fams" data-wp-each-key="context.item.blog_id">
           <li>
-            <a class="heyfam-landing__fam" data-wp-bind--href="context.item.url">
+            <a class="heyfam-landing__yourfams-chip" data-wp-bind--href="context.item.url">
               <strong data-wp-text="context.item.name"></strong>
               <span aria-hidden="true">→</span>
             </a>
           </li>
         </template>
       </ul>
-      <p class="heyfam-landing__hint">
-        Need another? <a href="/signup">Start a new family</a>.
-      </p>
     </section>
 
-    <section class="heyfam-landing__intro heyfam-stack heyfam-stack--loose"
-             data-wp-class--is-hidden="state.hasFams">
-      <h1>HeyFam</h1>
-      <p>Family conversations, organized.</p>
-      <div class="heyfam-landing__cta">
-        <a class="heyfam-button heyfam-button--primary" href="/signup">Start a fam</a>
-        <a class="heyfam-button heyfam-button--secondary" href="/login">Log in</a>
+    <section class="heyfam-hero">
+      <div class="heyfam-hero__copy">
+        <h1 class="heyfam-hero__headline heyfam-display">
+          The private space<br/>
+          you <span class="heyfam-hero__headline-emph">share life in.</span>
+          <svg class="heyfam-hero__underline" aria-hidden="true"><use href="#hfi-doodle-scribble-underline"/></svg>
+          <svg class="heyfam-hero__inline-heart" aria-hidden="true"><use href="#hfi-doodle-heart"/></svg>
+        </h1>
+        <p class="heyfam-hero__lede">Coordinate life, share the dumb stuff, and stay close — all in one place that's just for your people.</p>
+        <div class="heyfam-hero__cta">
+          <a class="heyfam-button heyfam-button--primary heyfam-button--lg" href="/signup">Get started — it's free</a>
+          <a class="heyfam-button heyfam-button--secondary heyfam-button--lg" href="/how-it-works">See how it works</a>
+        </div>
+        <ul class="heyfam-hero__trust">
+          <li><svg class="hf-icon"><use href="#hfi-lock"/></svg> Invite-only</li>
+          <li><svg class="hf-icon"><use href="#hfi-no-ads"/></svg> No ads</li>
+          <li><svg class="hf-icon"><use href="#hfi-smile"/></svg> Works for every generation</li>
+        </ul>
+      </div>
+
+      <div class="heyfam-hero__mockups" aria-hidden="true">
+        <svg class="heyfam-hero__brush" aria-hidden="true"><use href="#hfi-doodle-brush-stroke"/></svg>
+
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--star-tl"><use href="#hfi-doodle-star"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--star-tr"><use href="#hfi-doodle-star"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--star-br"><use href="#hfi-doodle-star"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--heart-mid"><use href="#hfi-doodle-heart"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--sparkle-tl"><use href="#hfi-doodle-sparkle"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--sparkle-br"><use href="#hfi-doodle-sparkle"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--tape-tl"><use href="#hfi-doodle-tape"/></svg>
+        <svg class="heyfam-hero__doodle heyfam-hero__doodle--tape-tr"><use href="#hfi-doodle-tape"/></svg>
+
+        <div class="heyfam-mockup heyfam-mockup--chat">
+          <div class="heyfam-mockup__header">
+            <span class="heyfam-mockup__logo"><span class="heyfam-logo__hey">Hey</span><span class="heyfam-logo__fam">Fam</span></span>
+            <span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span>
+          </div>
+          <div class="heyfam-mockup__tabs">
+            <span class="is-active">Chat</span><span>Polls</span><span>Events</span><span>Lists</span>
+          </div>
+          <div class="heyfam-mockup__body">
+            <div class="heyfam-mockup__post">
+              <div class="heyfam-mockup__avatar"></div>
+              <div class="heyfam-mockup__post-content">
+                <strong>Shaun</strong>
+                <p>Hamburgers for dinner?</p>
+                <div class="heyfam-mockup__photo"></div>
+                <div class="heyfam-mockup__reactions">
+                  <span>😂 3</span><span>🙌 2</span><span>❤️ 2</span>
+                </div>
+              </div>
+            </div>
+            <div class="heyfam-mockup__post heyfam-mockup__post--reply">
+              <div class="heyfam-mockup__avatar"></div>
+              <div class="heyfam-mockup__post-content">
+                <strong>Maria</strong>
+                <p>In the truck I think</p>
+              </div>
+            </div>
+            <div class="heyfam-mockup__post heyfam-mockup__post--reply">
+              <div class="heyfam-mockup__avatar"></div>
+              <div class="heyfam-mockup__post-content">
+                <strong>Jordan</strong>
+                <p>I'll check the garage!</p>
+              </div>
+            </div>
+          </div>
+          <div class="heyfam-mockup__compose">
+            <div class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></div>
+            <span>Add a comment…</span>
+          </div>
+        </div>
+
+        <div class="heyfam-mockup heyfam-mockup--poll">
+          <strong class="heyfam-mockup__poll-title">Vacation this summer?</strong>
+          <ul class="heyfam-mockup__poll-options">
+            <li><span class="heyfam-mockup__poll-icon heyfam-mockup__poll-icon--blue">🌴</span><span>Beach</span><span class="heyfam-mockup__poll-bar" style="--w: 90%"></span><span class="heyfam-mockup__poll-count">5</span></li>
+            <li><span class="heyfam-mockup__poll-icon heyfam-mockup__poll-icon--green">⛰️</span><span>Mountains</span><span class="heyfam-mockup__poll-bar" style="--w: 50%"></span><span class="heyfam-mockup__poll-count">3</span></li>
+            <li><span class="heyfam-mockup__poll-icon heyfam-mockup__poll-icon--purple">🏙️</span><span>City adventure</span><span class="heyfam-mockup__poll-bar" style="--w: 35%"></span><span class="heyfam-mockup__poll-count">2</span></li>
+            <li><span class="heyfam-mockup__poll-icon heyfam-mockup__poll-icon--peach">🚗</span><span>Road trip</span><span class="heyfam-mockup__poll-bar" style="--w: 20%"></span><span class="heyfam-mockup__poll-count">1</span></li>
+          </ul>
+          <p class="heyfam-mockup__poll-meta">11 votes &middot; Closes in 2 days <span class="heyfam-mockup__poll-check">✓</span></p>
+        </div>
       </div>
     </section>
+
+    <section class="heyfam-features">
+      <h2 class="heyfam-features__title heyfam-display">
+        <span class="heyfam-features__title-divider" aria-hidden="true"></span>
+        Built for the moments that matter
+        <span class="heyfam-features__title-divider" aria-hidden="true"></span>
+      </h2>
+      <ul class="heyfam-features__list">
+        <li class="heyfam-feature heyfam-feature--blue">
+          <span class="heyfam-feature__blob hf-torn-soft" aria-hidden="true"></span>
+          <svg class="heyfam-feature__icon"><use href="#hfi-chat-bubble"/></svg>
+          <strong>Chat</strong>
+          <span>&amp; share</span>
+        </li>
+        <li class="heyfam-feature heyfam-feature--yellow">
+          <span class="heyfam-feature__blob hf-torn-soft" aria-hidden="true"></span>
+          <svg class="heyfam-feature__icon"><use href="#hfi-poll"/></svg>
+          <strong>Polls</strong>
+          <span>&amp; decide</span>
+        </li>
+        <li class="heyfam-feature heyfam-feature--purple">
+          <span class="heyfam-feature__blob hf-torn-soft" aria-hidden="true"></span>
+          <svg class="heyfam-feature__icon"><use href="#hfi-calendar"/></svg>
+          <strong>Events</strong>
+          <span>&amp; plans</span>
+        </li>
+        <li class="heyfam-feature heyfam-feature--green">
+          <span class="heyfam-feature__blob hf-torn-soft" aria-hidden="true"></span>
+          <svg class="heyfam-feature__icon"><use href="#hfi-checklist"/></svg>
+          <strong>Lists</strong>
+          <span>&amp; reminders</span>
+        </li>
+        <li class="heyfam-feature heyfam-feature--peach">
+          <span class="heyfam-feature__blob hf-torn-soft" aria-hidden="true"></span>
+          <svg class="heyfam-feature__icon"><use href="#hfi-photo"/></svg>
+          <strong>Photos</strong>
+          <span>&amp; memories</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="heyfam-love">
+      <h2 class="heyfam-love__title heyfam-display">
+        Why families <span class="heyfam-love__title-emph">love</span> HeyFam
+        <svg class="heyfam-love__underline" aria-hidden="true"><use href="#hfi-doodle-scribble-underline"/></svg>
+        <svg class="heyfam-love__sparkle" aria-hidden="true"><use href="#hfi-doodle-sparkle"/></svg>
+      </h2>
+
+      <ul class="heyfam-love__cards">
+        <li class="heyfam-love__card heyfam-love__card--blue">
+          <div class="heyfam-love__preview heyfam-love__preview--chat" aria-hidden="true">
+            <div class="heyfam-love__bubble heyfam-love__bubble--1">
+              <span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span>
+              <span class="heyfam-love__bubble-line"></span>
+            </div>
+            <div class="heyfam-love__bubble heyfam-love__bubble--2">
+              <span class="heyfam-love__bubble-line"></span>
+              <span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span>
+            </div>
+            <div class="heyfam-love__bubble heyfam-love__bubble--3">
+              <span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span>
+              <span class="heyfam-love__bubble-line"></span>
+            </div>
+          </div>
+          <strong class="heyfam-love__heading heyfam-display">One place for everything</strong>
+          <p>No more endless group texts or lost plans.</p>
+        </li>
+
+        <li class="heyfam-love__card heyfam-love__card--cream">
+          <div class="heyfam-love__preview heyfam-love__preview--poll" aria-hidden="true">
+            <strong>Movie night pick 🎬</strong>
+            <ul>
+              <li><span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span><span>The Goonies</span><span class="heyfam-mockup__poll-bar" style="--w: 90%"></span><span>6</span></li>
+              <li><span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span><span>Chef</span><span class="heyfam-mockup__poll-bar" style="--w: 50%"></span><span>3</span></li>
+              <li><span class="heyfam-mockup__avatar heyfam-mockup__avatar--sm"></span><span>The Sandlot</span><span class="heyfam-mockup__poll-bar" style="--w: 30%"></span><span>2</span></li>
+            </ul>
+          </div>
+          <strong class="heyfam-love__heading heyfam-display">Decide without the group text chaos</strong>
+          <p>Polls everyone actually likes to reply to.</p>
+        </li>
+
+        <li class="heyfam-love__card heyfam-love__card--green">
+          <div class="heyfam-love__preview heyfam-love__preview--stickers" aria-hidden="true">
+            <span class="heyfam-love__sticker heyfam-love__sticker--pizza">🍕</span>
+            <span class="heyfam-love__sticker heyfam-love__sticker--thumbs">👍</span>
+            <span class="heyfam-love__sticker heyfam-love__sticker--car">🚙</span>
+            <span class="heyfam-love__sticker heyfam-love__sticker--vibes">good<br/>vibes<br/>only</span>
+          </div>
+          <strong class="heyfam-love__heading heyfam-display">A space that feels like yours</strong>
+          <p>Private, playful, and easy for everyone — even Grandma.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="heyfam-footer-trust">
+      <span><svg class="hf-icon heyfam-footer-trust__heart"><use href="#hfi-doodle-heart"/></svg> Loved by families, big and small</span>
+      <span><svg class="hf-icon heyfam-footer-trust__heart heyfam-footer-trust__heart--alt"><use href="#hfi-doodle-heart"/></svg> Invite-only — your people, your space</span>
+    </section>
+
   </div>
   <!-- /wp:html -->
 </div>
