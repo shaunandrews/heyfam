@@ -7,6 +7,7 @@ final class Slugs {
 		'wp-content', 'wp-includes', 'wp-json', 'xmlrpc.php', 'feed', 'comments',
 		'assets', 'sw.js', 'manifest.webmanifest', 'robots.txt', 'favicon.ico',
 		'admin', 'api', 'rest', 'static',
+		'how-it-works', 'features', 'pricing', 'about',
 	];
 
 	public static function is_reserved( string $slug ): bool {

@@ -4,9 +4,13 @@ namespace HeyFam\Core;
 final class PageBootstrap {
 	/** Map of page slug => [title, template]. Templates live in themes/heyfam-theme/templates/. */
 	private const PAGES = [
-		'signup' => [ 'Sign up',       'page-signup' ],
-		'login'  => [ 'Log in',        'page-login' ],
-		'invite' => [ 'Accept invite', 'page-invite' ],
+		'signup'        => [ 'Sign up',       'page-signup' ],
+		'login'         => [ 'Log in',        'page-login' ],
+		'invite'        => [ 'Accept invite', 'page-invite' ],
+		'how-it-works'  => [ 'How it works',  'page-marketing' ],
+		'features'      => [ 'Features',      'page-marketing' ],
+		'pricing'       => [ 'Pricing',       'page-marketing' ],
+		'about'         => [ 'About',         'page-marketing' ],
 	];
 
 	public function __construct() {
@@ -22,10 +26,10 @@ final class PageBootstrap {
 	 */
 	public function self_heal(): void {
 		if ( ! is_main_site() ) return;
-		if ( get_site_option( 'heyfam_pages_v' ) === '2' ) return;
+		if ( get_site_option( 'heyfam_pages_v' ) === '3' ) return;
 		self::ensure_pages();
 		self::ensure_account_pages_for_subsites();
-		update_site_option( 'heyfam_pages_v', '2' );
+		update_site_option( 'heyfam_pages_v', '3' );
 	}
 
 	public function add_rewrites(): void {
