@@ -42,6 +42,10 @@
 
   /* Typography */
   --hf-font-family: var(--wp--preset--font-family--system);
+  /* Display font — Caveat — handwritten/painted feel for marketing headlines
+   * and decorative tags. Used sparingly: hero h1, section h2 on landing,
+   * "loved by families" tagline. Body copy stays on system fonts. */
+  --hf-font-display: 'Caveat', 'Bradley Hand', 'Marker Felt', cursive;
   --hf-font-size-xs:  var(--wp--preset--font-size--xs);
   --hf-font-size-sm:  var(--wp--preset--font-size--sm);
   --hf-font-size-md:  var(--wp--preset--font-size--md);
