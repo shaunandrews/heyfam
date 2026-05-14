@@ -62,6 +62,7 @@ final class Plugin {
 		}
 		\HeyFam\Core\Notifs\Push::create_table();
 		\HeyFam\Core\PageBootstrap::ensure_pages();
+		\HeyFam\Core\PageBootstrap::ensure_account_pages_for_subsites();
 		flush_rewrite_rules();
 	}
 

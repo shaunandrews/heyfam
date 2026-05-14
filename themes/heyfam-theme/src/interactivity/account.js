@@ -2,7 +2,7 @@ import { store } from '@wordpress/interactivity';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 
-const debounceTimers = new Map();
+let prefsDebounce = null;
 
 // Holds non-reactive instances (DOM streams, library handles) outside of state
 // so IAPI's proxy doesn't try to deep-watch them.
@@ -16,9 +16,24 @@ const initialPushPermission = typeof Notification !== 'undefined' ? Notification
 
 const isMobileDevice = () => /Mobi|Android|iPhone|iPad/.test( navigator.userAgent || '' );
 
+const emptyFam = () => ( {
+  slug:             '',
+  name:             '',
+  blog_id:          0,
+  url:              '',
+  prefs:            defaultPrefs(),
+  inviteUrl:        '',
+  inviteRecipients: '',
+  inviteNote:       '',
+  sendingInvites:   false,
+  inviteStatus:     '',
+  qrOpen:           false,
+  qrSvg:            '',
+} );
+
 const { state, actions } = store( 'heyfam/account', {
   state: {
-    fams: [],
+    fam: emptyFam(),
     loading: true,
     loadError: '',
     pushPermission: initialPushPermission,
@@ -36,30 +51,27 @@ const { state, actions } = store( 'heyfam/account', {
     get logoutUrl() {
       return store( 'heyfam' ).state.logoutUrl || '/wp-login.php?action=logout';
     },
+    get newFamUrl() {
+      return store( 'heyfam' ).state.newFamUrl || '/signup';
+    },
     // IAPI directives only react to direct property access. Plain getters
     // computed off other state aren't picked up at hydration, so we keep
     // visibility flags as plain reactive props and recompute them whenever
-    // pushPermission, fams, or loading change.
+    // pushPermission changes.
     pushNotEnabled:   initialPushPermission !== 'default',
     pushNotGranted:   initialPushPermission !== 'granted',
     pushNotDenied:    initialPushPermission !== 'denied',
-    // Hide the empty-state line whenever the user has fams OR the page is still loading.
-    hasFamsOrLoading: true,
   },
   actions: {
     *togglePref( e ) {
-      const slug    = e.target.getAttribute( 'data-fam' );
       const event   = e.target.getAttribute( 'data-event' );
       const channel = e.target.getAttribute( 'data-channel' );
       const checked = !! e.target.checked;
-      const fam = state.fams.find( f => f.slug === slug );
-      if ( ! fam ) return;
+      if ( ! state.fam.slug ) return;
       // Mutate the reactive proxy so the checkbox stays in sync.
-      fam.prefs[ event ][ channel ] = checked;
-      // Debounce the save per-fam so rapid toggles coalesce.
-      const key = `prefs:${slug}`;
-      if ( debounceTimers.has( key ) ) clearTimeout( debounceTimers.get( key ) );
-      debounceTimers.set( key, setTimeout( () => savePrefs( slug ), 500 ) );
+      state.fam.prefs[ event ][ channel ] = checked;
+      if ( prefsDebounce ) clearTimeout( prefsDebounce );
+      prefsDebounce = setTimeout( savePrefs, 500 );
     },
     *requestPush() {
       if ( typeof Notification === 'undefined' ) return;
@@ -157,27 +169,23 @@ const { state, actions } = store( 'heyfam/account', {
       }
     },
     *onFamNameInput( e ) {
-      const slug = e.target.dataset.fam;
-      const fam = state.fams.find( f => f.slug === slug );
-      if ( fam ) fam.name = e.target.value;
+      state.fam.name = e.target.value;
     },
     *saveFamName( e ) {
       e.preventDefault();
-      const slug = e.target.dataset.fam;
-      const fam = state.fams.find( f => f.slug === slug );
-      if ( ! fam ) return;
-      const name = ( fam.name || '' ).trim();
+      if ( ! state.fam.slug ) return;
+      const name = ( state.fam.name || '' ).trim();
       if ( ! name ) return;
       const heyfam = store( 'heyfam' ).state;
       try {
-        const r = yield fetch( `${heyfam.apiBase}/${slug}/name`, {
+        const r = yield fetch( `${heyfam.apiBase}/${state.fam.slug}/name`, {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
           body: JSON.stringify( { name } ),
         } );
         if ( ! r.ok ) throw new Error( 'rename-failed' );
         const body = yield r.json();
-        if ( body && body.name ) fam.name = body.name;
+        if ( body && body.name ) state.fam.name = body.name;
       } catch ( err ) {
         alert( 'Could not save the family name. Try again.' );
       }
@@ -186,87 +194,76 @@ const { state, actions } = store( 'heyfam/account', {
       if ( e?.target?.select ) e.target.select();
     },
     updateInviteRecipients( e ) {
-      const fam = state.fams.find( f => f.slug === e.target.dataset.fam );
-      if ( fam ) fam.inviteRecipients = e.target.value;
+      state.fam.inviteRecipients = e.target.value;
     },
     updateInviteNote( e ) {
-      const fam = state.fams.find( f => f.slug === e.target.dataset.fam );
-      if ( fam ) fam.inviteNote = e.target.value;
+      state.fam.inviteNote = e.target.value;
     },
-    *copyInviteLink( e ) {
-      const slug = e.target.dataset.fam;
-      const fam  = state.fams.find( f => f.slug === slug );
-      if ( ! fam?.inviteUrl ) return;
+    *copyInviteLink() {
+      if ( ! state.fam.inviteUrl ) return;
       try {
-        yield navigator.clipboard.writeText( fam.inviteUrl );
-        fam.inviteStatus = 'Link copied.';
-        setTimeout( () => { if ( fam.inviteStatus === 'Link copied.' ) fam.inviteStatus = ''; }, 2500 );
+        yield navigator.clipboard.writeText( state.fam.inviteUrl );
+        state.fam.inviteStatus = 'Link copied.';
+        setTimeout( () => { if ( state.fam.inviteStatus === 'Link copied.' ) state.fam.inviteStatus = ''; }, 2500 );
       } catch ( err ) {
-        fam.inviteStatus = 'Could not copy. Long-press the link to copy manually.';
+        state.fam.inviteStatus = 'Could not copy. Long-press the link to copy manually.';
       }
     },
-    *shareInviteLink( e ) {
-      const slug = e.target.dataset.fam;
-      const fam  = state.fams.find( f => f.slug === slug );
-      if ( ! fam?.inviteUrl || ! navigator.share ) return;
+    *shareInviteLink() {
+      if ( ! state.fam.inviteUrl || ! navigator.share ) return;
       try {
-        yield navigator.share( { title: `Join ${fam.name} on HeyFam`, url: fam.inviteUrl } );
+        yield navigator.share( { title: `Join ${state.fam.name} on HeyFam`, url: state.fam.inviteUrl } );
       } catch ( err ) {
         // User cancelled or share failed silently — no UI change.
       }
     },
     *toggleQr( e ) {
-      const slug = e.target.dataset.fam;
-      const fam  = state.fams.find( f => f.slug === slug );
-      if ( ! fam ) return;
-      fam.qrOpen = ! fam.qrOpen;
-      if ( fam.qrOpen && ! fam.qrSvg ) {
+      state.fam.qrOpen = ! state.fam.qrOpen;
+      if ( state.fam.qrOpen && ! state.fam.qrSvg ) {
         try {
           const { default: QRCode } = yield import( 'qrcode-svg' );
           const qr = new QRCode( {
-            content: fam.inviteUrl, padding: 2, width: 192, height: 192,
+            content: state.fam.inviteUrl, padding: 2, width: 192, height: 192,
             color: '#1a1f17', background: '#f4f6f0', ecl: 'M', join: true,
           } );
-          fam.qrSvg = qr.svg();
+          state.fam.qrSvg = qr.svg();
           // Reactive innerHTML isn't a thing in IAPI, so paint manually.
           const host = e.target.closest( '.heyfam-account__fam' )?.querySelector( '.heyfam-account__invite-qr' );
-          if ( host ) host.innerHTML = fam.qrSvg;
+          if ( host ) host.innerHTML = state.fam.qrSvg;
         } catch ( err ) {
-          fam.qrOpen = false;
+          state.fam.qrOpen = false;
           alert( 'Could not render the QR code.' );
         }
       }
     },
     *sendInvites( e ) {
       e.preventDefault();
-      const slug = e.target.dataset.fam;
-      const fam  = state.fams.find( f => f.slug === slug );
-      if ( ! fam || fam.sendingInvites ) return;
-      const raw = ( fam.inviteRecipients || '' ).split( /[\n,]+/ ).map( s => s.trim() ).filter( Boolean );
+      if ( ! state.fam.slug || state.fam.sendingInvites ) return;
+      const raw = ( state.fam.inviteRecipients || '' ).split( /[\n,]+/ ).map( s => s.trim() ).filter( Boolean );
       if ( ! raw.length ) {
-        fam.inviteStatus = 'Add at least one phone number or email.';
+        state.fam.inviteStatus = 'Add at least one phone number or email.';
         return;
       }
-      fam.sendingInvites = true;
-      fam.inviteStatus   = '';
+      state.fam.sendingInvites = true;
+      state.fam.inviteStatus   = '';
       const heyfam = store( 'heyfam' ).state;
       try {
-        const r = yield fetch( `${heyfam.apiBase}/${slug}/invites`, {
+        const r = yield fetch( `${heyfam.apiBase}/${state.fam.slug}/invites`, {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
-          body: JSON.stringify( { recipients: raw, message_note: fam.inviteNote || '' } ),
+          body: JSON.stringify( { recipients: raw, message_note: state.fam.inviteNote || '' } ),
         } );
         if ( ! r.ok ) throw new Error( 'invite-failed' );
         const body = yield r.json();
         const sent = ( body.issued || [] ).filter( i => i.sent ).length;
         const skipped = ( body.skipped || [] ).length;
-        fam.inviteStatus = `Sent ${sent}${ skipped ? ` (${skipped} skipped — invalid)` : '' }.`;
-        fam.inviteRecipients = '';
-        fam.inviteNote       = '';
+        state.fam.inviteStatus = `Sent ${sent}${ skipped ? ` (${skipped} skipped — invalid)` : '' }.`;
+        state.fam.inviteRecipients = '';
+        state.fam.inviteNote       = '';
       } catch ( err ) {
-        fam.inviteStatus = 'Could not send. Try again.';
+        state.fam.inviteStatus = 'Could not send. Try again.';
       } finally {
-        fam.sendingInvites = false;
+        state.fam.sendingInvites = false;
       }
     },
     *clearAvatar() {
@@ -308,11 +305,10 @@ const { state, actions } = store( 'heyfam/account', {
       // skips re-applying class bindings whose initial DOM state matches the
       // proxy. Toggle each flag through its opposite to trip the proxy's
       // change-detection, then recomputeVisibility() re-asserts the right values.
-      state.pushNotEnabled   = ! state.pushNotEnabled;
-      state.pushNotGranted   = ! state.pushNotGranted;
-      state.pushNotDenied    = ! state.pushNotDenied;
-      state.hasFamsOrLoading = ! state.hasFamsOrLoading;
-      state.canShare         = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+      state.pushNotEnabled = ! state.pushNotEnabled;
+      state.pushNotGranted = ! state.pushNotGranted;
+      state.pushNotDenied  = ! state.pushNotDenied;
+      state.canShare       = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
       recomputeVisibility();
 
       const heyfam = store( 'heyfam' ).state;
@@ -321,60 +317,54 @@ const { state, actions } = store( 'heyfam/account', {
         window.location.href = '/login';
         return;
       }
+      const slug = heyfam.famSlug;
+      if ( ! slug ) {
+        state.loading   = false;
+        state.loadError = 'This settings page must be opened from a family.';
+        return;
+      }
       try {
-        const r = yield fetch( `${heyfam.apiBase}/me/fams`, {
-          credentials: 'include',
-          headers: { 'X-WP-Nonce': heyfam.nonce },
-        } );
-        if ( ! r.ok ) throw new Error( 'load-failed' );
-        const body = yield r.json();
-        const fams = ( body && body.fams ) || [];
-        // Fetch prefs + invite-link for each fam in parallel.
-        const withPrefs = yield Promise.all( fams.map( async ( fam ) => {
-          const headers = { 'X-WP-Nonce': heyfam.nonce };
-          const [ prefsResp, linkResp ] = await Promise.all( [
-            fetch( `${heyfam.apiBase}/${fam.slug}/prefs`, { credentials: 'include', headers } ).catch( () => null ),
-            fetch( `${heyfam.apiBase}/${fam.slug}/invite-link`, { credentials: 'include', headers } ).catch( () => null ),
-          ] );
-          let prefs = defaultPrefs();
-          if ( prefsResp && prefsResp.ok ) {
-            const pb = await prefsResp.json();
-            if ( pb && pb.prefs ) prefs = pb.prefs;
-          }
-          let inviteUrl = '';
-          if ( linkResp && linkResp.ok ) {
-            const lb = await linkResp.json();
-            inviteUrl = lb?.url || '';
-          }
-          return {
-            ...fam,
-            prefs,
-            inviteUrl,
-            inviteRecipients:  '',
-            inviteNote:        '',
-            sendingInvites:    false,
-            inviteStatus:      '',
-            qrOpen:            false,
-            qrSvg:             '',
-          };
-        } ) );
-        state.fams = withPrefs;
+        const headers = { 'X-WP-Nonce': heyfam.nonce };
+        const [ famsResp, prefsResp, linkResp ] = yield Promise.all( [
+          fetch( `${heyfam.apiBase}/me/fams`,           { credentials: 'include', headers } ).catch( () => null ),
+          fetch( `${heyfam.apiBase}/${slug}/prefs`,     { credentials: 'include', headers } ).catch( () => null ),
+          fetch( `${heyfam.apiBase}/${slug}/invite-link`, { credentials: 'include', headers } ).catch( () => null ),
+        ] );
+
+        // Look up the current fam in the membership list so we get the name +
+        // blog_id without a per-fam endpoint. If the user isn't a member, fall
+        // back to a minimal record so the UI still binds.
+        let famRecord = null;
+        if ( famsResp && famsResp.ok ) {
+          const body = yield famsResp.json();
+          famRecord = ( body && body.fams || [] ).find( f => f.slug === slug ) || null;
+        }
+
+        let prefs = defaultPrefs();
+        if ( prefsResp && prefsResp.ok ) {
+          const pb = yield prefsResp.json();
+          if ( pb && pb.prefs ) prefs = pb.prefs;
+        }
+        let inviteUrl = '';
+        if ( linkResp && linkResp.ok ) {
+          const lb = yield linkResp.json();
+          inviteUrl = lb?.url || '';
+        }
+
+        Object.assign( state.fam, famRecord || { slug, name: slug }, { prefs, inviteUrl } );
         state.loading = false;
-        recomputeVisibility();
       } catch ( err ) {
-        state.loading = false;
-        state.loadError = 'Could not load your fams. Try refreshing.';
-        recomputeVisibility();
+        state.loading   = false;
+        state.loadError = 'Could not load your settings. Try refreshing.';
       }
     },
   },
 } );
 
 function recomputeVisibility() {
-  state.pushNotEnabled   = state.pushPermission !== 'default';
-  state.pushNotGranted   = state.pushPermission !== 'granted';
-  state.pushNotDenied    = state.pushPermission !== 'denied';
-  state.hasFamsOrLoading = !! state.fams.length || !! state.loading;
+  state.pushNotEnabled = state.pushPermission !== 'default';
+  state.pushNotGranted = state.pushPermission !== 'granted';
+  state.pushNotDenied  = state.pushPermission !== 'denied';
 }
 
 function defaultPrefs() {
@@ -433,15 +423,14 @@ function destroyCropper() {
   state.cropSrc  = '';
 }
 
-async function savePrefs( slug ) {
+async function savePrefs() {
   const heyfam = store( 'heyfam' ).state;
-  const fam = state.fams.find( f => f.slug === slug );
-  if ( ! fam ) return;
+  if ( ! state.fam.slug ) return;
   try {
-    await fetch( `${heyfam.apiBase}/${slug}/prefs`, {
+    await fetch( `${heyfam.apiBase}/${state.fam.slug}/prefs`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': heyfam.nonce },
-      body: JSON.stringify( { prefs: fam.prefs } ),
+      body: JSON.stringify( { prefs: state.fam.prefs } ),
     } );
   } catch ( err ) {
     // Silent failure — next toggle will retry.

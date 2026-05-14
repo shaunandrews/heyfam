@@ -56,7 +56,7 @@ const { state, actions } = store( 'heyfam/login', {
         // login/verify rotates the nonce (now authenticated as the user).
         const vbody = yield v.json().catch( () => ( {} ) );
         if ( vbody && vbody.nonce ) heyfam.nonce = vbody.nonce;
-        // Authenticated. Find the user's first fam, fall back to /account.
+        // Authenticated. Find the user's first fam, fall back to landing.
         const f = yield fetch( `${heyfam.apiBase}/me/fams`, {
           method: 'GET', credentials: 'include',
           headers: { 'X-WP-Nonce': heyfam.nonce },
@@ -67,7 +67,7 @@ const { state, actions } = store( 'heyfam/login', {
           window.location.href = fams[ 0 ].url;
           return;
         }
-        window.location.href = '/account';
+        window.location.href = '/';
       } catch ( err ) {
         state.error = 'Network error. Try again.';
         state.busy = false;

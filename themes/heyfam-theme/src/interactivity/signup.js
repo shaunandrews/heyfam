@@ -171,7 +171,7 @@ const { state, actions } = store( 'heyfam/signup', {
           window.location.href = state.famUrl;
           return;
         }
-        window.location.href = '/account';
+        window.location.href = '/';
       } catch ( err ) {
         state.error = 'Network error. Try again.';
       } finally { state.busy = false; }

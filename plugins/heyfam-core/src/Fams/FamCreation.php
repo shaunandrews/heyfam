@@ -56,6 +56,8 @@ final class FamCreation {
 				update_option( 'page_on_front',  $feed_id );
 			}
 
+			\HeyFam\Core\PageBootstrap::ensure_account_page();
+
 			// Delete the WP default "Hello world!" post and its sample comment
 			// so the fam feed starts clean.
 			$defaults = get_posts( [

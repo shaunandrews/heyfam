@@ -45,19 +45,19 @@ add_action( 'wp_enqueue_scripts', static function () {
         'heyfam-tokens',
         get_theme_file_uri( 'src/styles/tokens.css' ),
         [],
-        '0.2.0'
+        '0.26.0'
     );
     wp_enqueue_style(
         'heyfam-base',
         get_theme_file_uri( 'src/styles/base.css' ),
         [ 'heyfam-tokens' ],
-        '0.2.0'
+        '0.26.0'
     );
     wp_enqueue_style(
         'heyfam-components',
         get_theme_file_uri( 'src/styles/components.css' ),
         [ 'heyfam-base' ],
-        '0.2.0'
+        '0.26.0'
     );
 
     // Bundle CSS emitted by esbuild (CropperJS styles, etc.). Only enqueued
@@ -85,6 +85,8 @@ add_action( 'wp_enqueue_scripts', static function () {
     wp_interactivity_state( 'heyfam', [
         'nonce'            => wp_create_nonce( 'wp_rest' ),
         'famSlug'          => $is_main ? null : $fam_slug,
+        'accountUrl'       => $is_main ? '' : home_url( '/account' ),
+        'newFamUrl'        => network_home_url( '/signup' ),
         'vapidKey'         => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
         'apiBase'          => '/wp-json/heyfam/v1',
         'userId'           => $uid,

@@ -1,6 +1,8 @@
 <!-- wp:html -->
-<nav class="heyfam-header-nav" aria-label="Account">
-  <a href="/account">Settings</a>
+<nav class="heyfam-header-nav" aria-label="Account"
+     data-wp-interactive="heyfam"
+     data-wp-class--is-hidden="!state.accountUrl">
+  <a data-wp-bind--href="state.accountUrl">Settings</a>
   <a href="/design">Design</a>
 </nav>
 <!-- /wp:html -->
