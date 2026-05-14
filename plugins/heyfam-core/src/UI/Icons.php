@@ -121,6 +121,42 @@ final class Icons {
 
 	public static function render_sprite(): void {
 		echo '<svg xmlns="http://www.w3.org/2000/svg" class="heyfam-icon-sprite" aria-hidden="true" focusable="false">';
+
+		// Texture filters. Referenced from CSS via `filter: url(#hf-torn)` etc.
+		// Higher baseFrequency = smaller noise pattern = more jagged/torn look
+		// (vs lower freq, which gives smooth fluid waves). Seeds are fixed so
+		// edges stay stable across reloads.
+		//
+		//   hf-torn      — construction-paper torn edge for buttons, chips.
+		//   hf-torn-soft — gentler torn edge for large surfaces (cards, modals).
+		//   hf-pencil    — light wobble that reads as a hand-drawn pencil line,
+		//                  for inputs and form controls.
+		echo '<defs>'
+			// Torn paper — fractalNoise at LOW base frequency creates the big
+			// irregular tear bumps; high numOctaves layers in finer fiber detail
+			// on top (octaves run at 2x, 4x, 8x the base). Scale is large
+			// because the displacement is the main tear shape, not just fringe.
+			. '<filter id="hf-torn" x="-15%" y="-15%" width="130%" height="130%">'
+			.   '<feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="4" seed="3"/>'
+			.   '<feDisplacementMap in="SourceGraphic" scale="5"/>'
+			. '</filter>'
+			. '<filter id="hf-torn-soft" x="-8%" y="-8%" width="116%" height="116%">'
+			.   '<feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="5"/>'
+			.   '<feDisplacementMap in="SourceGraphic" scale="3"/>'
+			. '</filter>'
+			// Pencil — tight, light wobble that reads as a drawn line.
+			. '<filter id="hf-pencil" x="-4%" y="-4%" width="108%" height="108%">'
+			.   '<feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" seed="7"/>'
+			.   '<feDisplacementMap in="SourceGraphic" scale="1.2"/>'
+			. '</filter>'
+			// Pencil wacky — large irregular bumps for big card outlines, so
+			// the frames feel obviously hand-sketched, not just slightly off.
+			. '<filter id="hf-pencil-wacky" x="-6%" y="-6%" width="112%" height="112%">'
+			.   '<feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="9"/>'
+			.   '<feDisplacementMap in="SourceGraphic" scale="4"/>'
+			. '</filter>'
+			. '</defs>';
+
 		foreach ( self::ICONS as $name => $def ) {
 			$paint_attrs = $def['paint'] === 'stroke'
 				? 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'

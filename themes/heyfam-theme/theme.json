@@ -5,17 +5,19 @@
     "appearanceTools": true,
     "color": {
       "palette": [
-        { "slug": "background",        "name": "Background",         "color": "#f4f6f0" },
-        { "slug": "foreground",        "name": "Foreground",         "color": "#1a1f17" },
-        { "slug": "foreground-muted",  "name": "Foreground Muted",   "color": "#6a7166" },
-        { "slug": "foreground-subtle", "name": "Foreground Subtle",  "color": "#a8b0a3" },
-        { "slug": "border",            "name": "Border",             "color": "#dde4d7" },
-        { "slug": "border-strong",     "name": "Border Strong",      "color": "#ccd5c4" },
-        { "slug": "accent",            "name": "Accent",             "color": "#5a8a52" },
-        { "slug": "accent-foreground", "name": "Accent Foreground",  "color": "#ffffff" },
-        { "slug": "accent-soft",       "name": "Accent Soft",        "color": "#e9efe5" },
-        { "slug": "danger",      "name": "Danger",         "color": "#e07a5f" },
-        { "slug": "success",     "name": "Success",        "color": "#3f7a4e" }
+        { "slug": "background",        "name": "Background",         "color": "#fef9ec" },
+        { "slug": "foreground",        "name": "Foreground",         "color": "#111827" },
+        { "slug": "foreground-muted",  "name": "Foreground Muted",   "color": "#4b5563" },
+        { "slug": "foreground-subtle", "name": "Foreground Subtle",  "color": "#9ca3af" },
+        { "slug": "border",            "name": "Border",             "color": "#e8dfc4" },
+        { "slug": "border-strong",     "name": "Border Strong",      "color": "#d4c9a8" },
+        { "slug": "accent",            "name": "Accent",             "color": "#2563eb" },
+        { "slug": "accent-foreground", "name": "Accent Foreground",  "color": "#fff7e0" },
+        { "slug": "accent-strong",     "name": "Accent Strong",      "color": "#1e3a8a" },
+        { "slug": "accent-soft",       "name": "Accent Soft",        "color": "#dbeafe" },
+        { "slug": "sky",               "name": "Sky",                "color": "#60a5fa" },
+        { "slug": "danger",            "name": "Danger",             "color": "#ff8a3d" },
+        { "slug": "success",           "name": "Success",            "color": "#22c55e" }
       ]
     },
     "typography": {

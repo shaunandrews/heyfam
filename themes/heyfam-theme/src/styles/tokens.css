@@ -22,8 +22,14 @@
   --hf-color-accent:       var(--wp--preset--color--accent);
   --hf-color-accent-fg:    var(--wp--preset--color--accent-foreground);
   --hf-color-accent-soft:  var(--wp--preset--color--accent-soft);
+  --hf-color-accent-strong:var(--wp--preset--color--accent-strong);
+  --hf-color-sky:          var(--wp--preset--color--sky);
   --hf-color-danger:       var(--wp--preset--color--danger);
   --hf-color-success:      var(--wp--preset--color--success);
+  /* Pencil — faint warm graphite, paired with --hf-filter-pencil to draw
+   * soft hand-sketched outlines on the cream paper. Deliberately light —
+   * pencil lines should suggest the shape, not lock it down with ink. */
+  --hf-color-pencil:       #e8dfc4;
 
   /* Spacing */
   --hf-space-1: var(--wp--preset--spacing--1);
@@ -83,6 +89,30 @@
   /* Avatar */
   --hf-avatar-size:    var(--wp--custom--avatar--size);
   --hf-avatar-size-lg: var(--wp--custom--avatar--size-lg);
+
+  /* Texture — torn-paper edges, pencil lines, paper grain.
+   * Filter IDs are emitted into the inline SVG sprite by Icons.php.
+   *   --hf-filter-torn      — bold torn-paper edge (buttons, chips, toast)
+   *   --hf-filter-torn-soft — gentle torn edge (cards, modals, composer)
+   *   --hf-filter-pencil    — light hand-drawn wobble (inputs, textareas)
+   * Paper grain is a single SVG tile inlined as a data-URI; %23 is the
+   * URL-encoded `#` for the inner feColorMatrix → rect filter reference.
+   */
+  --hf-filter-torn:         url('#hf-torn');
+  --hf-filter-torn-soft:    url('#hf-torn-soft');
+  --hf-filter-pencil:       url('#hf-pencil');
+  --hf-filter-pencil-wacky: url('#hf-pencil-wacky');
+  /* Subtle paper grain — barely visible warm noise for body bg and large
+   * surfaces. Reads as paper fiber when tinted. */
+  --hf-bg-paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.12  0 0 0 0 0.09  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+  /* Crinkled paper surface — asymmetric fractal noise thresholded into
+   * semi-transparent black streaks. Designed to overlay solid button
+   * colors via `background-blend-mode: multiply` so the streaks darken
+   * the paper, reading as wrinkle shadows. Tile is 200×200 to keep the
+   * same crinkle from repeating visibly inside a single button.
+   * The feColorMatrix sets RGB to black and maps the noise's red
+   * channel to alpha (offset by -0.5 so only bright noise survives). */
+  --hf-bg-crinkle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.02 0.07' numOctaves='2' seed='11'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.5 0 0 0 -0.3'/></filter><rect width='100%25' height='100%25' filter='url(%23c)'/></svg>");
 }
 
 /*
@@ -91,17 +121,20 @@
  */
 @media (prefers-color-scheme: dark) {
   :root {
-    --hf-color-bg:           #141914;
-    --hf-color-fg:           #eef2eb;
-    --hf-color-fg-muted:     #a8b0a4;
-    --hf-color-fg-subtle:    #717a72;
-    --hf-color-border:       #2a2f2b;
-    --hf-color-border-strong:#353b36;
-    --hf-color-accent:       #8fbe85;
-    --hf-color-accent-fg:    #141914;
-    --hf-color-accent-soft:  #1f2a23;
-    --hf-color-danger:       #e89178;
-    --hf-color-success:      #6fae82;
+    --hf-color-bg:            #0f172a;
+    --hf-color-fg:            #fff7e0;
+    --hf-color-fg-muted:      #c9cfa9;
+    --hf-color-fg-subtle:     #8a8e70;
+    --hf-color-border:        #1e293b;
+    --hf-color-border-strong: #334155;
+    --hf-color-accent:        #60a5fa;
+    --hf-color-accent-fg:     #0f172a;
+    --hf-color-accent-strong: #2563eb;
+    --hf-color-accent-soft:   #1e3a8a;
+    --hf-color-sky:           #93c5fd;
+    --hf-color-danger:        #ffb07d;
+    --hf-color-success:       #4ade80;
+    --hf-color-pencil:        #4d473d;
     --hf-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --hf-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
     --hf-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);

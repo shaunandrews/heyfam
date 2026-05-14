@@ -22,7 +22,9 @@ body {
   font-size: var(--hf-font-size-md);
   line-height: var(--hf-line-height-normal);
   color: var(--hf-color-fg);
-  background: var(--hf-color-bg);
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -43,8 +45,8 @@ a:hover { color: var(--hf-color-fg); }
 img, svg { display: block; max-width: 100%; }
 
 :focus-visible {
-  outline: var(--hf-focus-width) solid var(--hf-focus-color);
-  outline-offset: var(--hf-focus-offset);
+  outline: none;
+  box-shadow: inset 0 0 0 var(--hf-focus-width) var(--hf-color-sky);
   border-radius: var(--hf-radius-sm);
 }
 
@@ -72,3 +74,21 @@ img, svg { display: block; max-width: 100%; }
  * is invisible; .hf-icon is the inline glyph that <use>s a symbol from it. */
 .heyfam-icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .hf-icon { display: inline-block; width: 1em; height: 1em; vertical-align: middle; flex-shrink: 0; }
+
+/* Texture utilities — apply the construction-paper aesthetic to any element.
+ * Component CSS uses the same tokens directly; these classes exist so
+ * one-off elements, custom blocks, or third-party widgets can opt in
+ * without touching shared rules.
+ *   .hf-torn       — bold torn-paper edge (buttons, chips, small UI)
+ *   .hf-torn-soft  — gentle torn edge (large surfaces)
+ *   .hf-pencil     — pencil-line wobble (form controls)
+ *   .hf-paper      — paper grain background
+ */
+.hf-torn          { filter: var(--hf-filter-torn); }
+.hf-torn-soft     { filter: var(--hf-filter-torn-soft); }
+.hf-pencil        { filter: var(--hf-filter-pencil); }
+.hf-pencil-wacky  { filter: var(--hf-filter-pencil-wacky); }
+.hf-paper {
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+}

@@ -90,6 +90,7 @@ $mo_ease  = $settings['custom']['motion']['easing']   ?? [];
 </style>
 </head>
 <body <?php body_class( 'heyfam-design-page' ); ?>>
+<?php wp_body_open(); ?>
 
 <main class="heyfam-design">
 

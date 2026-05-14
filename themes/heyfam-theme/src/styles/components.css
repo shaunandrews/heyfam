@@ -23,12 +23,32 @@
  *
  * `.is-active` is a toggle state for tertiary buttons that flip a mode on.
  */
+/*
+ * Button architecture
+ * -------------------
+ * The element itself carries layout + text/icon (CRISP — no filter).
+ * A `::before` pseudo paints the torn-paper surface BEHIND the content,
+ * carrying the variant's background color, the crinkle texture, and the
+ * torn filter. Labels and icons sit on top, unaffected.
+ *
+ * Variants set two CSS variables:
+ *   --hf-btn-bg     — the paper color (solid)
+ *   --hf-btn-paint  — the filter applied to the painted surface
+ *
+ * Secondary uses `--hf-filter-pencil` instead so it reads as a drawn
+ * outline rectangle rather than torn paper. Tertiary skips the surface
+ * entirely (it's a text-only button).
+ */
 .heyfam-button {
+  --hf-btn-bg: transparent;
+  --hf-btn-paint: var(--hf-filter-torn);
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--hf-space-2);
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--hf-radius-md);
   height: 2.5rem;
   padding-inline: var(--hf-space-4);
@@ -39,41 +59,68 @@
   background: transparent;
   color: var(--hf-color-fg);
   transition:
-    background-color var(--hf-motion-fast) var(--hf-ease-standard),
     color            var(--hf-motion-fast) var(--hf-ease-standard),
-    border-color     var(--hf-motion-fast) var(--hf-ease-standard),
     transform        var(--hf-motion-fast) var(--hf-ease-standard);
   user-select: none;
   -webkit-appearance: none;
 }
-.heyfam-button:active { transform: scale(0.97); }
-.heyfam-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.heyfam-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-btn-bg);
+  background-image: var(--hf-bg-crinkle);
+  background-repeat: repeat;
+  background-blend-mode: multiply;
+  filter: var(--hf-btn-paint);
+  border-radius: inherit;
+  z-index: -1;
+  transition: background-color var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-button:hover    { transform: scale(1.02); }
+.heyfam-button:active   { transform: scale(0.97); }
+.heyfam-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* Variants */
+/* Variants — each variant overrides the two custom props and any text color. */
 .heyfam-button--primary {
-  background: var(--hf-color-accent);
+  --hf-btn-bg: var(--hf-color-accent);
   color: var(--hf-color-accent-fg);
 }
-.heyfam-button--primary:hover { filter: brightness(0.95); }
+.heyfam-button--primary:hover { --hf-btn-bg: var(--hf-color-accent-strong); }
 
+/* Secondary is an outline button — pencil-drawn rectangle, no crinkle, no
+ * torn fibre. The ::before draws the border with the pencil filter so it
+ * looks hand-sketched while the label stays crisp. */
 .heyfam-button--secondary {
-  background: transparent;
-  border-color: var(--hf-color-border-strong);
+  --hf-btn-bg: transparent;
+  --hf-btn-paint: var(--hf-filter-pencil);
   color: var(--hf-color-fg);
 }
-.heyfam-button--secondary:hover { border-color: var(--hf-color-fg-muted); }
+.heyfam-button--secondary::before {
+  background-image: none;
+  border: 1.5px solid var(--hf-color-pencil);
+}
+.heyfam-button--secondary:hover::before { border-color: var(--hf-color-fg-muted); }
 
+/* Tertiary is text-only — no surface at all unless the user hovers, in
+ * which case a soft accent paper appears (still no torn fringe). */
 .heyfam-button--tertiary {
-  background: transparent;
+  --hf-btn-bg: transparent;
+  --hf-btn-paint: none;
   color: var(--hf-color-fg-muted);
 }
-.heyfam-button--tertiary:hover { color: var(--hf-color-fg); background: var(--hf-color-accent-soft); }
+.heyfam-button--tertiary::before { background-image: none; }
+.heyfam-button--tertiary:hover {
+  color: var(--hf-color-fg);
+  --hf-btn-bg: var(--hf-color-accent-soft);
+  --hf-btn-paint: var(--hf-filter-pencil);
+}
 
 .heyfam-button--danger {
-  background: var(--hf-color-danger);
+  --hf-btn-bg: var(--hf-color-danger);
   color: #fff;
 }
-.heyfam-button--danger:hover { filter: brightness(0.95); }
+.heyfam-button--danger:hover { --hf-btn-bg: color-mix(in srgb, var(--hf-color-danger) 88%, var(--hf-color-fg)); }
 
 /* Sizes */
 .heyfam-button--sm {
@@ -95,10 +142,13 @@
 /* Modifiers */
 .heyfam-button--block { width: 100%; }
 
-/* Toggled state — used by tertiary toggles. */
+/* Toggled state — used by tertiary toggles. Brings back the painted surface
+ * with the soft accent, using the pencil filter so it reads as a "drawn
+ * highlight" rather than torn paper. */
 .heyfam-button.is-active {
+  --hf-btn-bg: var(--hf-color-accent-soft);
+  --hf-btn-paint: var(--hf-filter-pencil);
   color: var(--hf-color-accent);
-  background: var(--hf-color-accent-soft);
 }
 
 /* --- Input / Textarea --------------------------------------------- */
@@ -107,12 +157,25 @@
   font: inherit;
   width: 100%;
   padding: var(--hf-space-2) var(--hf-space-3);
-  border: 1px solid var(--hf-color-border-strong);
+  /* 1.5px pencil-toned border + light wobble filter = pencil-drawn line. */
+  border: 1.5px solid var(--hf-color-pencil);
   border-radius: var(--hf-radius-md);
-  background: var(--hf-color-bg);
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
   color: var(--hf-color-fg);
+  filter: var(--hf-filter-pencil);
   transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
   -webkit-appearance: none;
+}
+.heyfam-input:focus,
+.heyfam-input:focus-visible,
+.heyfam-textarea:focus,
+.heyfam-textarea:focus-visible {
+  border-color: var(--hf-color-sky);
+  background: #fff;
+  outline: none;
+  box-shadow: none;
 }
 /* Inputs/textareas defer to the global `:focus-visible` rule in base.css:
  * a 2px solid ring with 1px offset, painted via the native `outline` —
@@ -137,13 +200,28 @@
 }
 
 /* --- Card --------------------------------------------------------- */
+/* Base card — same pencil-rectangle treatment as the post card. */
 .heyfam-card {
-  background: var(--hf-color-bg);
-  border: 1px solid var(--hf-color-border);
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
   display: grid;
   gap: var(--hf-space-3);
+}
+.heyfam-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+  border: 1.5px solid var(--hf-color-pencil);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil);
+  z-index: -1;
 }
 .heyfam-card--tight   { padding: var(--hf-space-3); }
 
@@ -190,12 +268,16 @@
   position: fixed;
   left: 50%; bottom: var(--hf-space-5);
   transform: translateX(-50%);
-  background: var(--hf-color-fg);
+  background-color: var(--hf-color-fg);
+  background-image: var(--hf-bg-crinkle);
+  background-repeat: repeat;
+  background-blend-mode: screen;
   color: var(--hf-color-bg);
   padding: var(--hf-space-2) var(--hf-space-4);
   border-radius: var(--hf-radius-md);
   box-shadow: var(--hf-shadow-lg);
   z-index: var(--hf-z-toast);
+  filter: var(--hf-filter-torn);
   animation: heyfam-toast-in var(--hf-motion-normal) var(--hf-ease-standard) both;
 }
 @keyframes heyfam-toast-in {
@@ -212,7 +294,9 @@
   z-index: var(--hf-z-modal);
 }
 .heyfam-modal__dialog {
-  background: var(--hf-color-bg);
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-5);
   max-width: 480px; width: 100%;
@@ -334,15 +418,31 @@ body.heyfam-modal-open { overflow: hidden; }
   display: grid; gap: var(--hf-space-2);
 }
 .heyfam-landing__fam {
+  --hf-fam-border: var(--hf-color-pencil);
+  position: relative;
+  isolation: isolate;
   display: flex; justify-content: space-between; align-items: center;
   padding: var(--hf-space-4);
-  border: 1px solid var(--hf-color-border);
+  border: 0;
   border-radius: var(--hf-radius-lg);
   text-decoration: none; color: var(--hf-color-fg);
-  background: var(--hf-color-bg);
+  background: transparent;
+  transition: color var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-landing__fam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+  border: 1.5px solid var(--hf-fam-border);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil);
+  z-index: -1;
   transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-landing__fam:hover { border-color: var(--hf-color-accent); color: var(--hf-color-accent); }
+.heyfam-landing__fam:hover { color: var(--hf-color-accent); --hf-fam-border: var(--hf-color-accent); }
 .heyfam-landing__hint { margin: 0; color: var(--hf-color-fg-muted); font-size: var(--hf-font-size-sm); }
 .heyfam-landing__hint a { color: var(--hf-color-accent); }
 
@@ -353,12 +453,29 @@ body.heyfam-modal-open { overflow: hidden; }
 /* WP wraps every template-part in a div; let cards participate directly in the grid. */
 .heyfam-feed__list > .wp-block-template-part { display: contents; }
 
+/* Post card — paper surface with a pencil-drawn rectangle border. The
+ * ::before carries the paper bg, the border, and the pencil filter so
+ * the border reads as hand-sketched while the post content stays crisp. */
 .heyfam-post-card {
-  background: var(--hf-color-bg);
-  border: 1px solid var(--hf-color-border);
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
   display: grid; gap: var(--hf-space-3);
+}
+.heyfam-post-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+  border: 1.5px solid var(--hf-color-pencil);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil-wacky);
+  z-index: -1;
 }
 .heyfam-post-card__header {
   display: flex; gap: var(--hf-space-2);
@@ -388,7 +505,9 @@ body.heyfam-modal-open { overflow: hidden; }
   margin: 0;
   padding: var(--hf-space-1);
   list-style: none;
-  background: var(--hf-color-bg);
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
   border: 1px solid var(--hf-color-border-strong);
   border-radius: var(--hf-radius-md);
   box-shadow: var(--hf-shadow-md);
@@ -443,26 +562,44 @@ body.heyfam-modal-open { overflow: hidden; }
   display: flex; gap: var(--hf-space-2);
   padding: 0; margin: 0; list-style: none; flex-wrap: wrap;
 }
+/* Reaction chip — pencil-drawn rectangle. The ::before draws the border
+ * with the pencil filter so the outline reads as hand-sketched; the emoji
+ * and count sit on top, unfiltered, so they stay crisp. */
 .heyfam-reactions__chip {
+  --hf-chip-bg: transparent;
+  --hf-chip-border: var(--hf-color-pencil);
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   gap: var(--hf-space-1);
   height: 1.75rem;
   padding: 0 var(--hf-space-2);
-  border: 1px solid var(--hf-color-border);
+  border: 0;
   border-radius: var(--hf-radius-md);
-  background: var(--hf-color-bg);
+  background: transparent;
   color: var(--hf-color-fg);
   cursor: pointer;
   font: inherit;
-  transition:
-    background var(--hf-motion-fast) var(--hf-ease-standard),
-    border-color var(--hf-motion-fast) var(--hf-ease-standard);
+  transition: color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-reactions__chip:hover { background: var(--hf-color-accent-soft); }
+.heyfam-reactions__chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-chip-bg);
+  border: 1.5px solid var(--hf-chip-border);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil);
+  z-index: -1;
+  transition:
+    background-color var(--hf-motion-fast) var(--hf-ease-standard),
+    border-color     var(--hf-motion-fast) var(--hf-ease-standard);
+}
+.heyfam-reactions__chip:hover { --hf-chip-bg: var(--hf-color-accent-soft); }
 .heyfam-reactions__chip.is-mine {
-  border-color: transparent;
-  background: var(--hf-color-accent-soft);
+  --hf-chip-bg: var(--hf-color-accent-soft);
+  --hf-chip-border: var(--hf-color-accent);
 }
 .heyfam-reactions__chip-count {
   font-size: var(--hf-font-size-xs);
@@ -476,9 +613,13 @@ body.heyfam-modal-open { overflow: hidden; }
   color: var(--hf-color-fg-muted);
 }
 
-/* Tooltip — opt in by setting [data-tooltip="text"] on any element.
- * Reveals on :hover and :focus-visible. The element is auto-positioned so
- * `position: relative` is applied for you. Empty values render nothing. */
+/* Tooltip — opt in with `data-tooltip="text"` on any element. Reveals on
+ * hover/focus.
+ *
+ * Uses `::after` only (single pseudo) so the host element's `::before` is
+ * left free for components that paint their own surface there (chips,
+ * cards, buttons). The torn filter is applied to the pill — short tooltip
+ * text picks up a slight hand-painted wobble which reads as character. */
 [data-tooltip] { position: relative; }
 [data-tooltip]:not([data-tooltip=""])::after {
   content: attr(data-tooltip);
@@ -486,46 +627,57 @@ body.heyfam-modal-open { overflow: hidden; }
   bottom: calc(100% + var(--hf-space-1));
   left: 50%;
   transform: translateX(-50%);
-  background: var(--hf-color-fg);
-  color: var(--hf-color-bg);
   padding: var(--hf-space-1) var(--hf-space-2);
-  border-radius: var(--hf-radius-sm);
   font-size: var(--hf-font-size-xs);
   line-height: var(--hf-line-height-tight);
   white-space: nowrap;
+  color: var(--hf-color-bg);
+  background-color: var(--hf-color-fg);
+  background-image: var(--hf-bg-crinkle);
+  background-blend-mode: screen;
+  border-radius: var(--hf-radius-sm);
+  filter: var(--hf-filter-torn-soft);
+  box-shadow: var(--hf-shadow-md);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--hf-motion-fast) var(--hf-ease-standard);
   z-index: var(--hf-z-menu);
-  box-shadow: var(--hf-shadow-md);
 }
 [data-tooltip]:not([data-tooltip=""]):hover::after,
 [data-tooltip]:not([data-tooltip=""]):focus-visible::after {
   opacity: 1;
 }
 
+/* Composer — pencil-rectangle paper card. ::before paints surface + border. */
 .heyfam-composer {
   position: relative;
+  isolation: isolate;
   display: grid; gap: var(--hf-space-3);
   padding: var(--hf-space-4);
-  background: var(--hf-color-bg);
-  border: 1px solid var(--hf-color-border);
+  background: transparent;
+  border: 0;
   border-radius: var(--hf-radius-lg);
+  transition: box-shadow var(--hf-motion-fast) var(--hf-ease-standard);
 }
-/* Focus ring is a separate pseudo-element pinned around the card so it
- * doesn't compose with the card's own border. The textarea inside has
- * `outline: none` so the ring only appears on the card edge. */
-.heyfam-composer::after {
+.heyfam-composer::before {
   content: '';
   position: absolute;
-  inset: calc(-1 * (var(--hf-focus-offset) + var(--hf-focus-width)));
-  border: var(--hf-focus-width) solid var(--hf-focus-color);
-  border-radius: calc(var(--hf-radius-lg) + var(--hf-focus-offset) + var(--hf-focus-width));
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--hf-motion-fast) var(--hf-ease-standard);
+  inset: 0;
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+  border: 1.5px solid var(--hf-color-pencil);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil-wacky);
+  z-index: -1;
+  transition: border-color var(--hf-motion-fast) var(--hf-ease-standard);
 }
-.heyfam-composer:focus-within::after { opacity: 1; }
+/* Focus state — border-color shift on the ::before, no shadow. */
+.heyfam-composer:focus-within::before {
+  border-color: var(--hf-color-sky);
+  background-color: #fff;
+  background-image: none;
+}
 .heyfam-composer textarea {
   /* JS auto-grows the height; the card carries the visual chrome. */
   resize: none;
@@ -621,7 +773,7 @@ body.heyfam-modal-open { overflow: hidden; }
 .heyfam-comment-form { display: grid; gap: var(--hf-space-2); }
 .heyfam-comment-form textarea {
   padding: var(--hf-space-2);
-  border: 1px solid var(--hf-color-border);
+  border: 1.5px solid var(--hf-color-border);
   border-radius: var(--hf-radius-md);
   font: inherit; width: 100%;
   background: var(--hf-color-bg);
@@ -682,10 +834,6 @@ body.heyfam-modal-open { overflow: hidden; }
   background: var(--hf-color-bg);
   color: var(--hf-color-fg);
 }
-.heyfam-auth input:focus-visible {
-  outline: var(--hf-focus-width) solid var(--hf-focus-color);
-  outline-offset: var(--hf-focus-offset);
-}
 .heyfam-auth button {
   font: inherit;
   padding: var(--hf-space-2) var(--hf-space-4);
@@ -713,10 +861,24 @@ body.heyfam-modal-open { overflow: hidden; }
   gap: var(--hf-space-5);
 }
 .heyfam-account__fam {
-  background: var(--hf-color-bg);
-  border: 1px solid var(--hf-color-border);
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
   border-radius: var(--hf-radius-lg);
   padding: var(--hf-space-4);
+}
+.heyfam-account__fam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--hf-color-bg);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
+  border: 1.5px solid var(--hf-color-pencil);
+  border-radius: inherit;
+  filter: var(--hf-filter-pencil);
+  z-index: -1;
 }
 .heyfam-account__fam-rename {
   display: grid;
@@ -895,7 +1057,11 @@ body.heyfam-modal-open { overflow: hidden; }
   padding: var(--hf-space-2) var(--hf-space-1);
   border-radius: var(--hf-radius-md);
   border: 1px solid transparent;
-  background: transparent;
+  background-color: transparent;
+  background-image: var(--hf-bg-crinkle);
+  background-repeat: repeat;
+  background-blend-mode: multiply;
+  filter: var(--hf-filter-torn);
 }
 .heyfam-stepper__num {
   display: grid;
@@ -970,7 +1136,9 @@ body.heyfam-modal-open { overflow: hidden; }
   justify-content: space-between;
   padding: var(--hf-space-3) var(--hf-space-4);
   border-radius: var(--hf-radius-md);
-  background: var(--hf-color-accent-soft);
+  background-color: var(--hf-color-accent-soft);
+  background-image: var(--hf-bg-paper);
+  background-repeat: repeat;
   border: 1px solid var(--hf-color-border);
   color: var(--hf-color-fg);
 }
@@ -1000,17 +1168,13 @@ body.heyfam-modal-open { overflow: hidden; }
 
 /* === Composer multi-photo additions =============================== */
 /* The base .heyfam-composer above defines display/padding/background/
- * border/radius. These additive rules layer drop-target affordance and
- * the preview strip on top of that block.
+ * border/radius. This rule layers drop-target affordance on top. We use
+ * a border-color shift (not outline) so it composes with the painted
+ * filter region — outlines draw outside the box and get clipped.
  */
-.heyfam-composer {
-  transition: outline-color var(--hf-motion-fast) var(--hf-ease-standard);
-  outline: 2px dashed transparent;
-  outline-offset: -2px;
-}
-.heyfam-composer.is-drop-target {
-  outline-color: var(--hf-color-accent);
-  background: color-mix(in srgb, var(--hf-color-accent) 8%, var(--hf-color-bg));
+.heyfam-composer.is-drop-target::before {
+  border-color: var(--hf-color-accent);
+  background-color: color-mix(in srgb, var(--hf-color-accent) 8%, var(--hf-color-bg));
 }
 
 .heyfam-composer__previews {
@@ -1089,8 +1253,8 @@ body.heyfam-modal-open { overflow: hidden; }
   overflow: hidden;
 }
 .heyfam-gallery__tile:focus-visible {
-  outline: var(--hf-focus-width) solid var(--hf-color-accent);
-  outline-offset: calc(-1 * var(--hf-focus-width));
+  outline: none;
+  box-shadow: inset 0 0 0 var(--hf-focus-width) var(--hf-color-sky);
   z-index: 1;
 }
 
