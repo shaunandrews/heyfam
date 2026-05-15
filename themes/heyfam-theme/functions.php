@@ -90,6 +90,7 @@ add_action( 'wp_enqueue_scripts', static function () {
         'vapidKey'         => getenv( 'VAPID_PUBLIC_KEY' ) ?: '',
         'apiBase'          => '/wp-json/heyfam/v1',
         'userId'           => $uid,
+        'userName'         => $uid ? ( wp_get_current_user()->display_name ?: wp_get_current_user()->user_login ) : '',
         'userAvatarUrl'    => $uid && class_exists( '\\HeyFam\\Core\\Avatars\\Avatar' )
             ? \HeyFam\Core\Avatars\Avatar::url_for_user( $uid, 64 )
             : '',

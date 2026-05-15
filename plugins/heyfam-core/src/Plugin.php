@@ -2,6 +2,9 @@
 namespace HeyFam\Core;
 
 final class Plugin {
+	/** Bump when adding a new per-subsite table; triggers a one-shot dbDelta. */
+	private const SCHEMA_V = '2';
+
 	public function boot(): void {
 		new \HeyFam\Core\Cli\Bootstrap();
 		new \HeyFam\Core\Privacy\PIIShield();
@@ -20,6 +23,20 @@ final class Plugin {
 			\HeyFam\Core\Reactions\Manager::create_table( (int) $site->blog_id );
 			\HeyFam\Core\Polls\Manager::create_table(     (int) $site->blog_id );
 		}, 30, 1 );
+
+		// Self-heal: features added after a site was provisioned (polls, etc.)
+		// only get their per-subsite tables on `wp_initialize_site` or plugin
+		// re-activation, so older sites silently 404 on writes. Keep a versioned
+		// option per blog and run `dbDelta` once when it lags this code.
+		add_action( 'init', static function () {
+			$bid     = (int) get_current_blog_id();
+			$current = (string) get_option( 'heyfam_subsite_schema_v', '' );
+			if ( $current === self::SCHEMA_V ) return;
+			\HeyFam\Core\Fams\Invites::create_table( $bid );
+			\HeyFam\Core\Reactions\Manager::create_table( $bid );
+			\HeyFam\Core\Polls\Manager::create_table( $bid );
+			update_option( 'heyfam_subsite_schema_v', self::SCHEMA_V );
+		}, 1 );
 
 		// Register custom image sizes used by the in-feed gallery + lightbox.
 		// 720 covers the 2-up tile (and the legacy single photo at 1x); 1600

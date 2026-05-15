@@ -46,7 +46,10 @@ final class Composer {
 		if ( is_wp_error( $post_id ) ) return $post_id;
 
 		if ( $is_poll ) {
-			update_post_meta( (int) $post_id, 'heyfam_poll_options', wp_json_encode( $opts ) );
+			// JSON_UNESCAPED_UNICODE keeps emojis as raw UTF-8 bytes rather than
+			// `\uXXXX` escapes — REST input goes through wp_unslash which
+			// eats the leading backslash and corrupts the codepoints.
+			update_post_meta( (int) $post_id, 'heyfam_poll_options', wp_json_encode( $opts, JSON_UNESCAPED_UNICODE ) );
 
 			$closes_at    = isset( $poll['closes_at'] ) ? (string) $poll['closes_at'] : '';
 			$closes_mysql = '';
@@ -144,7 +147,7 @@ final class Composer {
 		if ( is_wp_error( $res ) ) return $res;
 
 		if ( $is_poll ) {
-			update_post_meta( $post_id, 'heyfam_poll_options', wp_json_encode( $opts ) );
+			update_post_meta( $post_id, 'heyfam_poll_options', wp_json_encode( $opts, JSON_UNESCAPED_UNICODE ) );
 
 			$closes_at    = isset( $poll['closes_at'] ) ? (string) $poll['closes_at'] : '';
 			$closes_mysql = '';
@@ -239,14 +242,35 @@ final class Composer {
 		return array_map( 'intval', $attachments ?: [] );
 	}
 
-	/** Strip + cap a list of option strings; drop empties; max 80 chars each. */
+	/**
+	 * Normalise a raw options payload into the storage shape `[{label, emoji}]`.
+	 *
+	 * Accepts either:
+	 *  - a list of strings (legacy clients): emoji is left blank
+	 *  - a list of `[label, emoji]` arrays (current clients)
+	 *
+	 * Drops rows with empty labels, caps labels at 80 chars, and clips emoji
+	 * to the first grapheme so a stray paste of "🍕!!!" stores just "🍕".
+	 */
 	private static function sanitize_options( array $raw ): array {
 		$out = [];
 		foreach ( $raw as $o ) {
-			$s = trim( wp_strip_all_tags( (string) $o ) );
-			if ( $s === '' ) continue;
-			if ( mb_strlen( $s ) > 80 ) $s = mb_substr( $s, 0, 80 );
-			$out[] = $s;
+			if ( is_array( $o ) ) {
+				$label = trim( wp_strip_all_tags( (string) ( $o['label'] ?? '' ) ) );
+				$emoji = trim( (string) ( $o['emoji'] ?? '' ) );
+			} else {
+				$label = trim( wp_strip_all_tags( (string) $o ) );
+				$emoji = '';
+			}
+			if ( $label === '' ) continue;
+			if ( mb_strlen( $label ) > 80 ) $label = mb_substr( $label, 0, 80 );
+			if ( $emoji !== '' ) {
+				// First grapheme-ish — fine for the bulk of single-codepoint
+				// emojis. Compound flags / ZWJ sequences will get truncated;
+				// acceptable for v1 of this picker.
+				$emoji = mb_substr( $emoji, 0, 8 );
+			}
+			$out[] = [ 'label' => $label, 'emoji' => $emoji ];
 		}
 		return array_values( $out );
 	}

@@ -18,6 +18,17 @@
     <ul class="heyfam-composer__options">
       <template data-wp-each--option="state.optionList" data-wp-each-key="context.option.id">
         <li class="heyfam-composer__option">
+          <button type="button" class="heyfam-composer__option-emoji"
+                  data-wp-class--has-emoji="context.option.emoji"
+                  aria-label="Add emoji"
+                  data-tooltip="Add emoji"
+                  data-wp-on--click="actions.pickOptionEmoji">
+            <span class="heyfam-composer__option-emoji-glyph"
+                  data-wp-text="context.option.emoji"
+                  data-wp-class--is-hidden="!context.option.emoji"></span>
+            <span class="heyfam-composer__option-emoji-plus"
+                  data-wp-class--is-hidden="context.option.emoji">+</span>
+          </button>
           <input type="text" class="heyfam-input"
                  data-wp-bind--value="context.option.text"
                  data-wp-bind--placeholder="context.option.placeholder"
@@ -33,18 +44,17 @@
             data-wp-class--is-hidden="state.atMaxOptions">+ Add option</button>
 
     <div class="heyfam-composer__poll-row">
-      <label>
-        <span>Closes</span>
-        <input type="datetime-local" class="heyfam-input"
-               data-wp-bind--value="state.closesAt"
-               data-wp-on--input="actions.updateClosesAt" />
-      </label>
-      <label class="heyfam-composer__anon">
-        <input type="checkbox"
-               data-wp-bind--checked="state.anon"
-               data-wp-on--change="actions.toggleAnon" />
-        <span>Anonymous votes</span>
-      </label>
+      <span class="heyfam-composer__closes-label">Closes</span>
+      <div class="heyfam-composer__closes" role="radiogroup" aria-label="When the poll closes">
+        <template data-wp-each--preset="state.closesPresets" data-wp-each-key="context.preset.value">
+          <button type="button" class="heyfam-composer__closes-pill"
+                  data-wp-bind--data-value="context.preset.value"
+                  data-wp-class--is-active="context.preset.is_selected"
+                  data-wp-bind--aria-pressed="context.preset.is_selected"
+                  data-wp-text="context.preset.label"
+                  data-wp-on--click="actions.pickClosesPreset"></button>
+        </template>
+      </div>
     </div>
   </div>
 

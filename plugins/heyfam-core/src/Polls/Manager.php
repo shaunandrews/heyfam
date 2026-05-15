@@ -136,6 +136,7 @@ final class Manager {
 			if ( ! $u ) continue;
 			$name = $u->display_name ?: $u->user_login;
 			$out[] = [
+				'user_id'      => (int) $u->ID,
 				'name'         => $name,
 				'avatar_url'   => \HeyFam\Core\Avatars\Avatar::url_for_user( (int) $u->ID, 22 ),
 				'option_index' => (int) $r['option_index'],
@@ -144,13 +145,30 @@ final class Manager {
 		return $out;
 	}
 
-	/** Decoded options array (≥ 2 strings), or null if this post isn't a poll. */
+	/**
+	 * Decoded options array, or null if this post isn't a poll.
+	 *
+	 * Returns a list of `[ 'label' => string, 'emoji' => string ]` rows.
+	 * Legacy polls stored options as plain strings; we coerce those to the
+	 * object shape with an empty emoji so callers don't branch on format.
+	 */
 	public static function options_for( int $post_id ): ?array {
 		$raw = get_post_meta( $post_id, 'heyfam_poll_options', true );
 		if ( ! is_string( $raw ) || $raw === '' ) return null;
 		$decoded = json_decode( $raw, true );
 		if ( ! is_array( $decoded ) || count( $decoded ) < 2 ) return null;
-		return array_values( array_map( 'strval', $decoded ) );
+		$out = [];
+		foreach ( $decoded as $row ) {
+			if ( is_string( $row ) ) {
+				$out[] = [ 'label' => $row, 'emoji' => '' ];
+			} elseif ( is_array( $row ) ) {
+				$out[] = [
+					'label' => (string) ( $row['label'] ?? '' ),
+					'emoji' => (string) ( $row['emoji'] ?? '' ),
+				];
+			}
+		}
+		return $out;
 	}
 
 	public static function is_closed( int $post_id ): bool {

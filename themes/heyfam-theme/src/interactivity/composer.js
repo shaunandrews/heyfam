@@ -1,4 +1,5 @@
 import { store, getContext } from '@wordpress/interactivity';
+import 'emoji-picker-element';
 import { acceptable, isHeic } from '../lib/media.js';
 
 const MAX_FILES = 10;
@@ -7,10 +8,22 @@ const MAX_BYTES = 25 * 1024 * 1024; // 25 MB per file before client conversion
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 6;
 let nextOptionId = 1;
-const newOption = ( placeholder ) => ( { id: nextOptionId++, text: '', placeholder } );
+const newOption = ( placeholder ) => ( { id: nextOptionId++, text: '', emoji: '', placeholder } );
 const initialOptions = () => [
   newOption( 'Option 1' ),
   newOption( 'Option 2' ),
+];
+
+// Preset durations exposed in the poll composer. `value` is the preset key we
+// store in state; `hours` is what we add to `Date.now()` on submit to derive
+// the closes-at timestamp. The empty value means "never closes" — same
+// semantics as an empty `poll_closes_at` on the server.
+const CLOSES_PRESETS = [
+  { value: '',   label: 'Never', hours: 0   },
+  { value: '1h', label: '1 hour', hours: 1  },
+  { value: '4h', label: '4 hours', hours: 4 },
+  { value: '1d', label: '1 day', hours: 24  },
+  { value: '1w', label: '1 week', hours: 168 },
 ];
 
 const blankState = () => ( {
@@ -18,8 +31,7 @@ const blankState = () => ( {
   pending: [],
   pollMode: false,
   optionList: initialOptions(),
-  closesAt: '',
-  anon: false,
+  closesPreset: '',
 } );
 
 const { state, actions } = store( 'heyfam/composer', {
@@ -37,8 +49,7 @@ const { state, actions } = store( 'heyfam/composer', {
     // mode toggles so the user can iterate without losing typed text.
     pollMode: false,
     optionList: initialOptions(),
-    closesAt: '',
-    anon: false,
+    closesPreset: '',
     // Edit mode. `editingPostId` is 0 when composing a new post.
     editorOpen: false,
     editingPostId: 0,
@@ -76,6 +87,15 @@ const { state, actions } = store( 'heyfam/composer', {
     get pollToggleLabel() { return state.pollMode ? '← Back'         : 'Make it a poll'; },
     get atMaxOptions()    { return state.optionList.length >= MAX_OPTIONS; },
     get cannotRemove()    { return state.optionList.length <= MIN_OPTIONS; },
+    /**
+     * Closes presets decorated with `is_selected` so the template can drive
+     * `data-wp-class--is-active` directly off the loop context. Computed each
+     * read; cheap (five entries) and keeps state.closesPreset as the single
+     * source of truth.
+     */
+    get closesPresets() {
+      return CLOSES_PRESETS.map( p => ( { ...p, is_selected: p.value === state.closesPreset } ) );
+    },
   },
   actions: {
     updateBody( e ) {
@@ -160,8 +180,31 @@ const { state, actions } = store( 'heyfam/composer', {
       const opt = state.optionList.find( o => o.id === ctx?.option?.id );
       if ( opt ) opt.text = e.target.value;
     },
-    updateClosesAt( e ) { state.closesAt = e.target.value; },
-    toggleAnon( e )     { state.anon     = e.target.checked; },
+    /**
+     * Open the singleton emoji picker anchored on the option's emoji button.
+     * Closing happens on selection or outside-click (handled in openEmojiPicker).
+     * Clicking the button a second time toggles the picker closed.
+     */
+    pickOptionEmoji( e ) {
+      const ctx = getContext();
+      const opt = state.optionList.find( o => o.id === ctx?.option?.id );
+      if ( ! opt ) return;
+      const btn = e.currentTarget;
+      if ( emojiPickerIsFor( opt.id ) ) { closeEmojiPicker(); return; }
+      openEmojiPicker( btn, opt.id, ( emoji ) => { opt.emoji = emoji; } );
+    },
+    clearOptionEmoji() {
+      const ctx = getContext();
+      const opt = state.optionList.find( o => o.id === ctx?.option?.id );
+      if ( opt ) opt.emoji = '';
+    },
+    pickClosesPreset( e ) {
+      // Read directly from the button — `data-wp-bind--data-value` mirrors
+      // `context.preset.value` so this works for both SSR'd and JS-rendered
+      // buttons without needing the IAPI context here.
+      const v = e.currentTarget?.dataset?.value ?? '';
+      state.closesPreset = v;
+    },
 
     /**
      * Populate the composer from an existing post, stashing the inline draft
@@ -173,12 +216,11 @@ const { state, actions } = store( 'heyfam/composer', {
       // a double-open from clobbering the stash with the previous edit).
       if ( ! state.editorOpen ) {
         state.stash = {
-          body:       state.body,
-          pending:    state.pending,
-          pollMode:   state.pollMode,
-          optionList: state.optionList,
-          closesAt:   state.closesAt,
-          anon:       state.anon,
+          body:         state.body,
+          pending:      state.pending,
+          pollMode:     state.pollMode,
+          optionList:   state.optionList,
+          closesPreset: state.closesPreset,
         };
       }
 
@@ -194,22 +236,25 @@ const { state, actions } = store( 'heyfam/composer', {
         // Re-hydrate option list with deterministic IDs so data-wp-each can key.
         state.optionList = post.poll.options.map( ( o ) => {
           const id = nextOptionId++;
-          return { id, text: o.label || '', placeholder: `Option ${ o.index + 1 }` };
+          return {
+            id,
+            text:        o.label || '',
+            emoji:       o.emoji || '',
+            placeholder: `Option ${ o.index + 1 }`,
+          };
         } );
         // Pad to MIN_OPTIONS in the unlikely case the server returned fewer.
         while ( state.optionList.length < MIN_OPTIONS ) {
           state.optionList.push( newOption( `Option ${ state.optionList.length + 1 }` ) );
         }
-        // Convert ISO close to a `datetime-local`-friendly value, or blank.
-        state.closesAt = post.poll.closes_at
-          ? post.poll.closes_at.slice( 0, 16 )
-          : '';
-        state.anon = !! post.poll.anon;
+        // We can't reliably reverse-engineer which preset the user originally
+        // picked — pick a fresh duration to change the close time, or leave
+        // 'Never' to clear it.
+        state.closesPreset = '';
       } else {
-        state.pollMode   = false;
-        state.optionList = initialOptions();
-        state.closesAt   = '';
-        state.anon       = false;
+        state.pollMode     = false;
+        state.optionList   = initialOptions();
+        state.closesPreset = '';
       }
 
       state.editingPostId = post.id;
@@ -227,12 +272,11 @@ const { state, actions } = store( 'heyfam/composer', {
       // Restore the stashed inline draft if there was one.
       const s = state.stash;
       if ( s ) {
-        state.body       = s.body;
-        state.pending    = s.pending;
-        state.pollMode   = s.pollMode;
-        state.optionList = s.optionList;
-        state.closesAt   = s.closesAt;
-        state.anon       = s.anon;
+        state.body         = s.body;
+        state.pending      = s.pending;
+        state.pollMode     = s.pollMode;
+        state.optionList   = s.optionList;
+        state.closesPreset = s.closesPreset;
       } else {
         Object.assign( state, blankState() );
       }
@@ -275,17 +319,28 @@ const { state, actions } = store( 'heyfam/composer', {
       fd.append( 'body', state.body );
 
       if ( state.pollMode ) {
-        const opts = state.optionList
-          .map( o => o.text.trim() )
-          .filter( Boolean );
-        if ( opts.length < MIN_OPTIONS ) {
+        // Pair labels with their emojis BEFORE filtering empties, so we don't
+        // detach an emoji from its row when an option just above is blank.
+        const rows = state.optionList
+          .map( o => ( { label: o.text.trim(), emoji: ( o.emoji || '' ).trim() } ) )
+          .filter( r => r.label !== '' );
+        if ( rows.length < MIN_OPTIONS ) {
           state.error      = `A poll needs at least ${ MIN_OPTIONS } options.`;
           state.submitting = false;
           return;
         }
-        for ( const o of opts ) fd.append( 'poll_options[]', o );
-        if ( state.closesAt ) fd.append( 'poll_closes_at', state.closesAt );
-        fd.append( 'poll_anon', state.anon ? '1' : '0' );
+        for ( const r of rows ) {
+          fd.append( 'poll_options[]',       r.label );
+          fd.append( 'poll_option_emojis[]', r.emoji );
+        }
+        const preset = CLOSES_PRESETS.find( p => p.value === state.closesPreset );
+        if ( preset && preset.hours > 0 ) {
+          // Anchor at submit time so the displayed presets match what the
+          // backend stores (the server otherwise sees no closes_at and the
+          // poll never closes).
+          const closes = new Date( Date.now() + preset.hours * 3600 * 1000 );
+          fd.append( 'poll_closes_at', closes.toISOString() );
+        }
       } else {
         const ready = state.pending.filter( p => p.status === 'ready' );
         for ( const p of ready ) fd.append( 'photos[]', p.file, p.name );
@@ -317,13 +372,12 @@ const { state, actions } = store( 'heyfam/composer', {
           state.pending = [];
           actions.closeEditor();
         } else {
-          state.body       = '';
+          state.body         = '';
           autoSize( document.querySelector( '.heyfam-composer textarea' ) );
-          state.pending    = [];
-          state.pollMode   = false;
-          state.optionList = initialOptions();
-          state.closesAt   = '';
-          state.anon       = false;
+          state.pending      = [];
+          state.pollMode     = false;
+          state.optionList   = initialOptions();
+          state.closesPreset = '';
         }
 
         store( 'heyfam/feed' ).callbacks?.refresh?.( heyfam );
@@ -343,6 +397,66 @@ function autoSize( el ) {
   el.style.height = 'auto';
   el.style.height = Math.min( el.scrollHeight, AUTOSIZE_MAX ) + 'px';
   el.style.overflowY = el.scrollHeight > AUTOSIZE_MAX ? 'auto' : 'hidden';
+}
+
+/*
+ * Singleton emoji picker for the composer's per-option pickers. Lives on
+ * document.body and toggles into position over whichever option button was
+ * tapped. Mirrors reactions.js's pattern but the callback writes to the
+ * option's `emoji` instead of POSTing a reaction.
+ */
+let emojiPicker        = null;
+let emojiPickerOptId   = null;
+let emojiPickerOutside = null;
+let emojiPickerCallback = null;
+
+function getEmojiPicker() {
+  if ( emojiPicker ) return emojiPicker;
+  emojiPicker = document.createElement( 'emoji-picker' );
+  emojiPicker.classList.add( 'heyfam-emoji-picker' );
+  emojiPicker.style.position = 'absolute';
+  emojiPicker.style.zIndex   = '1000';
+  emojiPicker.style.display  = 'none';
+  emojiPicker.addEventListener( 'emoji-click', ( ev ) => {
+    if ( emojiPickerCallback ) emojiPickerCallback( ev.detail.unicode );
+    closeEmojiPicker();
+  } );
+  document.body.appendChild( emojiPicker );
+  return emojiPicker;
+}
+
+function emojiPickerIsFor( optId ) {
+  return emojiPicker && emojiPicker.style.display !== 'none' && emojiPickerOptId === optId;
+}
+
+function openEmojiPicker( btn, optId, cb ) {
+  const p = getEmojiPicker();
+  emojiPickerOptId    = optId;
+  emojiPickerCallback = cb;
+  const rect   = btn.getBoundingClientRect();
+  const h      = 400; // emoji-picker-element default height
+  const fits   = rect.bottom + h + 12 < window.innerHeight;
+  const top    = fits ? rect.bottom + window.scrollY + 6
+                      : rect.top    + window.scrollY - h - 6;
+  const left   = Math.max( 8, Math.min( rect.left + window.scrollX, window.innerWidth - 360 ) );
+  p.style.top     = `${ top }px`;
+  p.style.left    = `${ left }px`;
+  p.style.display = '';
+  if ( emojiPickerOutside ) document.removeEventListener( 'click', emojiPickerOutside );
+  emojiPickerOutside = ( ev ) => {
+    if ( ! p.contains( ev.target ) && ! btn.contains( ev.target ) ) closeEmojiPicker();
+  };
+  setTimeout( () => document.addEventListener( 'click', emojiPickerOutside ), 0 );
+}
+
+function closeEmojiPicker() {
+  if ( emojiPicker ) emojiPicker.style.display = 'none';
+  emojiPickerOptId    = null;
+  emojiPickerCallback = null;
+  if ( emojiPickerOutside ) {
+    document.removeEventListener( 'click', emojiPickerOutside );
+    emojiPickerOutside = null;
+  }
 }
 
 async function addFiles( files ) {

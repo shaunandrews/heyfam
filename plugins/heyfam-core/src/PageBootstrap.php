@@ -95,6 +95,7 @@ final class PageBootstrap {
 
 	/** Backfill account pages on every existing fam subsite. Called from Plugin::activate. */
 	public static function ensure_account_pages_for_subsites(): void {
+		if ( ! is_multisite() ) return;
 		$network_main = (int) get_network()->site_id;
 		foreach ( get_sites( [ 'number' => 0 ] ) as $site ) {
 			$blog_id = (int) $site->blog_id;

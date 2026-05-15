@@ -64,10 +64,12 @@
          data-wp-class--is-hidden="context.item.poll"
          data-wp-text="context.item.body"></div>
 
-    <!-- Poll widget — rendered only when context.item.poll is set. -->
+    <!-- Poll widget — rendered only when context.item.poll is set. The vote
+         click handler crosses into heyfam/polls; we keep the surrounding
+         directives in the parent feed namespace so `context.item` (set up by
+         the outer data-wp-each iteration) stays in scope. -->
     <div class="heyfam-poll"
-         data-wp-class--is-hidden="!context.item.poll"
-         data-wp-interactive="heyfam/polls">
+         data-wp-class--is-hidden="!context.item.poll">
       <h3 class="heyfam-poll__question" data-wp-text="context.item.body"></h3>
       <ul class="heyfam-poll__options">
         <template data-wp-each--option="context.item.poll.options"
@@ -77,23 +79,30 @@
             <button type="button" class="heyfam-poll__button"
                     data-wp-bind--data-option-index="context.option.index"
                     data-wp-bind--disabled="context.item.poll.closed"
-                    data-wp-on--click="actions.vote">
+                    data-wp-on--click="heyfam/polls::actions.vote">
               <span class="heyfam-poll__bar"
                     data-wp-bind--style="context.option.bar_style"></span>
+              <span class="heyfam-poll__emoji"
+                    data-wp-class--is-hidden="!context.option.emoji"
+                    data-wp-text="context.option.emoji"></span>
               <span class="heyfam-poll__label" data-wp-text="context.option.label"></span>
-              <span class="heyfam-poll__count">
-                <span data-wp-text="context.option.count"></span>
-                <span class="heyfam-poll__percent">
-                  · <span data-wp-text="context.option.percent"></span>%
-                </span>
-              </span>
+              <ul class="heyfam-poll__voters">
+                <template data-wp-each--voter="context.option.voters"
+                          data-wp-each-key="context.voter.user_id">
+                  <li>
+                    <img class="heyfam-poll__voter"
+                         data-wp-bind--src="context.voter.avatar_url"
+                         data-wp-bind--alt="context.voter.name"
+                         data-wp-bind--data-tooltip="context.voter.name" />
+                  </li>
+                </template>
+              </ul>
             </button>
           </li>
         </template>
       </ul>
       <p class="heyfam-poll__meta">
         <span data-wp-text="context.item.poll.total_votes"></span> vote(s)
-        <span data-wp-class--is-hidden="!context.item.poll.anon"> · anonymous</span>
       </p>
     </div>
 

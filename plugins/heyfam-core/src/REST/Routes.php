@@ -101,10 +101,11 @@ final class Routes {
             'methods'             => 'POST',
             'permission_callback' => fn( $r ) => \HeyFam\Core\Auth\Authorization::require_cap( $r, 'heyfam_post_to_fam' ),
             'args'                => [
-                'body'           => [ 'required' => false, 'type' => 'string' ],
-                'poll_options'   => [ 'required' => false, 'type' => 'array' ],
-                'poll_closes_at' => [ 'required' => false, 'type' => 'string' ],
-                'poll_anon'      => [ 'required' => false, 'type' => 'boolean' ],
+                'body'                => [ 'required' => false, 'type' => 'string' ],
+                'poll_options'        => [ 'required' => false, 'type' => 'array' ],
+                'poll_option_emojis'  => [ 'required' => false, 'type' => 'array' ],
+                'poll_closes_at'      => [ 'required' => false, 'type' => 'string' ],
+                'poll_anon'           => [ 'required' => false, 'type' => 'boolean' ],
             ],
             'callback'            => [ $this, 'create_post' ],
         ] );
@@ -174,6 +175,7 @@ final class Routes {
             'args'                => [
                 'body'                    => [ 'required' => false, 'type' => 'string' ],
                 'poll_options'            => [ 'required' => false, 'type' => 'array' ],
+                'poll_option_emojis'      => [ 'required' => false, 'type' => 'array' ],
                 'poll_closes_at'          => [ 'required' => false, 'type' => 'string' ],
                 'poll_anon'               => [ 'required' => false, 'type' => 'boolean' ],
                 'remove_attachment_ids'   => [ 'required' => false, 'type' => 'array' ],
@@ -653,7 +655,7 @@ final class Routes {
         $opts = $request->get_param( 'poll_options' );
         if ( is_array( $opts ) && count( $opts ) >= 2 ) {
             $poll = [
-                'options'   => $opts,
+                'options'   => self::zip_option_emojis( $opts, $request->get_param( 'poll_option_emojis' ) ),
                 'closes_at' => (string) ( $request->get_param( 'poll_closes_at' ) ?? '' ),
                 'anon'      => (bool) $request->get_param( 'poll_anon' ),
             ];
@@ -681,6 +683,23 @@ final class Routes {
      * into a list of per-file slots:
      *   [ [ 'name'=>a, 'tmp_name'=>a, ... ], [ 'name'=>b, ... ] ]
      */
+    /**
+     * Pair each label with its emoji from the parallel `poll_option_emojis[]`
+     * array. Sent as separate arrays because the FormData our composer uses
+     * can't carry nested structures cleanly.
+     */
+    private static function zip_option_emojis( array $labels, $emojis ): array {
+        $emojis = is_array( $emojis ) ? array_values( $emojis ) : [];
+        $out    = [];
+        foreach ( array_values( $labels ) as $i => $label ) {
+            $out[] = [
+                'label' => (string) $label,
+                'emoji' => (string) ( $emojis[ $i ] ?? '' ),
+            ];
+        }
+        return $out;
+    }
+
     private static function normalize_files_array( ?array $files ): array {
         if ( empty( $files ) || ! is_array( $files['name'] ?? null ) ) return [];
         $count = count( $files['name'] );
@@ -834,7 +853,7 @@ final class Routes {
         $opts = $request->get_param( 'poll_options' );
         if ( is_array( $opts ) && count( $opts ) >= 2 ) {
             $poll = [
-                'options'   => $opts,
+                'options'   => self::zip_option_emojis( $opts, $request->get_param( 'poll_option_emojis' ) ),
                 'closes_at' => (string) ( $request->get_param( 'poll_closes_at' ) ?? '' ),
                 'anon'      => (bool) $request->get_param( 'poll_anon' ),
             ];
@@ -1081,17 +1100,36 @@ final class Routes {
         $closed  = \HeyFam\Core\Polls\Manager::is_closed( $post_id );
         $my_vote = \HeyFam\Core\Polls\Manager::my_vote( $post_id, get_current_user_id() );
 
+        // Group voters by option once so the template can iterate
+        // `context.option.voters` without filtering. Anon polls (legacy) stay
+        // empty for both the per-option lists and the top-level array.
+        $voters_by_option = array_fill( 0, $count, [] );
+        if ( ! $anon ) {
+            foreach ( \HeyFam\Core\Polls\Manager::voters_for( $post_id ) as $v ) {
+                $oi = (int) $v['option_index'];
+                if ( $oi >= 0 && $oi < $count ) {
+                    $voters_by_option[ $oi ][] = [
+                        'user_id'    => (int) ( $v['user_id'] ?? 0 ),
+                        'name'       => (string) $v['name'],
+                        'avatar_url' => (string) $v['avatar_url'],
+                    ];
+                }
+            }
+        }
+
         $option_rows = [];
-        foreach ( $options as $i => $label ) {
+        foreach ( $options as $i => $opt ) {
             $n       = (int) $counts[ $i ];
             $percent = $total > 0 ? (int) round( ( $n / $total ) * 100 ) : 0;
             $option_rows[] = [
                 'index'      => $i,
-                'label'      => $label,
+                'label'      => (string) $opt['label'],
+                'emoji'      => (string) ( $opt['emoji'] ?? '' ),
                 'count'      => $n,
                 'percent'    => $percent,
                 'is_my_vote' => $i === $my_vote,
                 'bar_style'  => sprintf( 'width:%d%%;', $percent ),
+                'voters'     => $voters_by_option[ $i ],
             ];
         }
 

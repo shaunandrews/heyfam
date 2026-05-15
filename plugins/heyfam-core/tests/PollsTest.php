@@ -80,7 +80,13 @@ final class PollsTest extends \WP_UnitTestCase {
 	}
 
 	public function test_options_for_returns_array_for_poll(): void {
-		$this->assertSame( [ 'Pizza', 'Sushi' ], Manager::options_for( $this->post_id ) );
+		$this->assertSame(
+			[
+				[ 'label' => 'Pizza', 'emoji' => '' ],
+				[ 'label' => 'Sushi', 'emoji' => '' ],
+			],
+			Manager::options_for( $this->post_id )
+		);
 	}
 
 	public function test_voters_for_returns_avatar_url(): void {
